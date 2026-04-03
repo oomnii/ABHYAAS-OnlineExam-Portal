@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Session • Abhyaas</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="shortcut icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="/index.html">
+        <img src="/assets/logo.png" class="brand-logo" alt="Abhyaas Logo" />
+        <span>ABHYAAS</span>
+      </a>
+      <div data-user-bar></div>
+    </div>
+  </header>
+
+  <main class="container exam-shell">
+    <div id="instruction-box" class="instruction-box" style="padding:24px; margin-bottom:18px;">
+      <span class="eyebrow">Before you start</span>
+      <h1 class="page-title" id="instruction-title">Loading quiz...</h1>
+      <p class="lead" id="instruction-text"></p>
+      <div class="quiz-meta" id="instruction-meta" style="margin:18px 0;"></div>
+      <div class="notice">Switching tabs increases your warning count. Progress auto-saves while you attempt the exam.</div>
+      <div style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="start-or-resume">Start Quiz</button>
+        <a href="/student.html" class="btn btn-secondary">Back to Dashboard</a>
+      </div>
+    </div>
+
+    <section id="exam-shell" class="exam-layout hide">
+      <aside class="palette">
+        <div class="timer-card">
+          <div class="subtle">Remaining time</div>
+          <div class="timer-number" id="timer-number">00:00</div>
+          <div class="progress-bar" style="margin-top:12px;"><span id="time-progress" style="width:0%"></span></div>
+        </div>
+        <div style="margin-top:18px;" class="subtle">Question palette</div>
+        <div id="question-palette" class="palette-grid"></div>
+        <div class="notice" style="margin-top:18px;">
+          Warning count: <strong id="warning-count">0</strong>
+        </div>
+      </aside>
+      <div class="question-card card">
+        <div class="question-head">
+          <div>
+            <div class="eyebrow" id="question-position">Question 1</div>
+            <h2 id="quiz-title-heading">Quiz title</h2>
+            <p class="subtle" id="question-subject"></p>
+          </div>
+          <span class="meta-chip" id="question-marks">1 mark</span>
+        </div>
+        <h3 id="question-text"></h3>
+        <div id="option-list" class="option-list"></div>
+        <div class="exam-actions">
+          <div class="toolbar-actions">
+            <button class="btn btn-secondary" id="prev-question">Previous</button>
+            <button class="btn btn-secondary" id="next-question">Next</button>
+          </div>
+          <div class="toolbar-actions">
+            <button class="btn btn-ghost" id="save-progress">Save Progress</button>
+            <button class="btn btn-primary" id="submit-quiz">Submit Quiz</button>
+          </div>
+        </div>
+        <div id="quiz-message" class="notice hide"></div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/js/quiz.js"></script>
+</body>
+</html>

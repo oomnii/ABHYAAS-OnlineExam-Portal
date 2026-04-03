@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Dashboard • Abhyaas</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="shortcut icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="/index.html">
+        <img src="/assets/logo.png" class="brand-logo" alt="Abhyaas Logo" />
+        <span>ABHYAAS</span>
+      </a>
+      <div data-user-bar></div>
+    </div>
+  </header>
+  <main class="container dashboard-shell">
+    <div class="dashboard-header">
+      <div>
+        <span class="eyebrow">Teacher Panel</span>
+        <h1 class="page-title">Create quizzes, manage questions, and view ranked attempts.</h1>
+      </div>
+    </div>
+
+    <div class="dashboard-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar-nav">
+        <button class="nav-item active" data-tab-target="tab-overview">Overview</button>
+        <button class="nav-item" data-tab-target="tab-quizzes">Quizzes</button>
+        <button class="nav-item" data-tab-target="tab-management" id="nav-management">Quiz Management</button>
+        <button class="nav-item" data-tab-target="tab-analytics" id="nav-analytics">Quiz Analytics</button>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="tab-content">
+        <!-- Overview Tab -->
+        <div class="tab-pane active" id="tab-overview">
+          <section class="stats-grid" id="teacher-stats"></section>
+        </div>
+
+        <!-- Quizzes Tab -->
+        <div class="tab-pane" id="tab-quizzes">
+          <div class="stack">
+            <div class="panel">
+              <div class="toolbar">
+                <div>
+                  <h3>Create or update quiz</h3>
+                  <p class="subtle">Set title, subject, timer, instructions, and publish status.</p>
+                </div>
+                <button class="btn btn-secondary" id="reset-quiz-form">Clear form</button>
+              </div>
+              <form id="quiz-form" class="form-grid" style="margin-top:18px;">
+                <input type="hidden" name="quizId" />
+                <div class="form-row two">
+                  <div class="form-row">
+                    <label>Quiz title</label>
+                    <input type="text" name="title" required />
+                  </div>
+                  <div class="form-row">
+                    <label>Subject</label>
+                    <input type="text" name="subject" required />
+                  </div>
+                </div>
+                <div class="form-row two">
+                  <div class="form-row">
+                    <label>Timer (minutes)</label>
+                    <input type="number" min="1" name="timerMinutes" required />
+                  </div>
+                  <div class="form-row">
+                    <label>Status</label>
+                    <select name="status">
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <label>Instructions</label>
+                  <textarea name="instructions"></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit">Save Quiz</button>
+                <div id="quiz-message" class="notice hide"></div>
+              </form>
+            </div>
+
+            <div class="fixed-panel" style="height: auto; min-height: 350px; max-height: 500px;">
+              <div class="panel-header">
+                <div class="section-heading" style="margin-bottom:0">
+                  <div>
+                    <h3>Your quizzes</h3>
+                    <p class="subtle">Select a quiz to manage its questions or inspect analytics.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="panel-body" style="padding-right: 0; margin-right: 0;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>Status</th>
+                      <th>Questions</th>
+                      <th>Attempts</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="teacher-quiz-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Management Tab -->
+        <div class="tab-pane" id="tab-management">
+          <div class="stack">
+            <div class="panel">
+              <div class="toolbar">
+                <div>
+                  <h3>Question management</h3>
+                  <p class="subtle">Select one of your quizzes from the Quizzes tab to add, edit, or delete questions.</p>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0px;" class="notice">
+                <span id="selected-quiz-note">Select a quiz from the table first.</span>
+                <button class="btn btn-secondary btn-sm hide" id="jump-analytics-btn" onclick="document.querySelector('[data-tab-target=&quot;tab-analytics&quot;]').click()">View Analytics</button>
+              </div>
+              <form id="question-form" class="form-grid" style="margin-top:18px;">
+                <input type="hidden" name="questionId" />
+                <div class="form-row">
+                  <label>Question text</label>
+                  <textarea name="questionText"></textarea>
+                </div>
+                <div class="form-row two">
+                  <div class="form-row"><label>Option A</label><input type="text" name="optionA" /></div>
+                  <div class="form-row"><label>Option B</label><input type="text" name="optionB" /></div>
+                </div>
+                <div class="form-row two">
+                  <div class="form-row"><label>Option C</label><input type="text" name="optionC" /></div>
+                  <div class="form-row"><label>Option D</label><input type="text" name="optionD" /></div>
+                </div>
+                <div class="form-row two">
+                  <div class="form-row">
+                    <label>Correct option</label>
+                    <select name="correctOption">
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D</option>
+                    </select>
+                  </div>
+                  <div class="form-row">
+                    <label>Marks</label>
+                    <input type="number" name="marks" min="1" value="1" />
+                  </div>
+                </div>
+                <div class="toolbar-actions">
+                  <button class="btn btn-primary" type="submit">Save Question</button>
+                  <button class="btn btn-secondary" type="button" id="reset-question-form">Clear</button>
+                </div>
+                <div id="question-message" class="notice hide"></div>
+              </form>
+              
+              <div id="question-list" class="question-list" style="margin-top:24px; max-height: 400px; overflow-y: auto; padding-right: 8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Analytics Tab -->
+        <div class="tab-pane" id="tab-analytics">
+          <div class="stack">
+            <div class="panel">
+              <div class="toolbar">
+                <div>
+                  <h3>Quiz analytics</h3>
+                  <p class="subtle">View detailed statistics and attempt history for the specifically selected quiz.</p>
+                </div>
+                <button class="btn btn-secondary" onclick="document.querySelector('[data-tab-target=&quot;tab-management&quot;]').click()">Back to Management</button>
+              </div>
+              <div id="selected-quiz-note-analytics" class="notice" style="margin-top: 14px;">Select a quiz from the table first.</div>
+              <div id="analytics-summary" class="empty-state" style="margin-top: 18px;">Analytics will appear when you choose one of your quizzes.</div>
+              <div id="analytics-attempts" class="question-list" style="margin-top:18px; max-height: 400px; overflow-y: auto; padding-right: 8px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/js/teacher.js"></script>
+</body>
+</html>

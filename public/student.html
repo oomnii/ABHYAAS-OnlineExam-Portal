@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Dashboard • Abhyaas</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="shortcut icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="/index.html">
+        <img src="/assets/logo.png" class="brand-logo" alt="Abhyaas Logo" />
+        <span>ABHYAAS</span>
+      </a>
+      <div data-user-bar></div>
+    </div>
+  </header>
+  <main class="container dashboard-shell">
+    <div class="dashboard-header">
+      <div>
+        <span class="eyebrow">Student Panel</span>
+        <h1 class="page-title">Your quizzes, results, and progress in one place.</h1>
+      </div>
+      <a href="/index.html" class="btn btn-secondary">Back to Home</a>
+    </div>
+
+    <div class="dashboard-layout">
+      <!-- Sidebar -->
+      <aside class="sidebar-nav">
+        <button class="nav-item active" data-tab-target="tab-overview">Overview</button>
+        <button class="nav-item" data-tab-target="tab-quizzes">Available Quizzes</button>
+        <button class="nav-item" data-tab-target="tab-history">Attempt History</button>
+        <button class="nav-item" data-tab-target="tab-performance">Subject Performance</button>
+      </aside>
+
+      <!-- Main Content -->
+      <div class="tab-content">
+        <!-- Overview Tab -->
+        <div class="tab-pane active" id="tab-overview">
+          <section class="stats-grid" id="student-stats"></section>
+          <div class="panel" style="margin-top: 18px;">
+            <div class="toolbar">
+              <div>
+                <h3>My Notes</h3>
+                <p class="subtle">Keep track of important study points and tips.</p>
+              </div>
+            </div>
+            <form id="note-form" class="form-grid" style="margin-top:14px;">
+              <input type="hidden" name="noteId" />
+              <div class="form-row">
+                <textarea name="content" required placeholder="Type your note here..." style="min-height: 80px;"></textarea>
+              </div>
+              <div class="toolbar-actions">
+                <button class="btn btn-primary" type="submit">Save Note</button>
+                <button class="btn btn-secondary" type="button" id="reset-note-form">Clear</button>
+              </div>
+              <div id="note-message" class="notice hide"></div>
+            </form>
+            <div class="fixed-panel" style="margin-top:24px; min-height: 200px; height: 350px;">
+              <div class="panel-body">
+                <div id="student-notes-list" class="question-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quizzes Tab -->
+        <div class="tab-pane" id="tab-quizzes">
+          <div class="fixed-panel">
+            <div class="panel-header">
+              <div class="section-heading" style="margin-bottom:0">
+                <div>
+                  <h3>Available quizzes</h3>
+                  <p class="subtle">Published teacher quizzes and pre-saved subject practice sets.</p>
+                </div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div id="available-quizzes" class="quiz-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Tab -->
+        <div class="tab-pane" id="tab-history">
+          <div class="fixed-panel">
+            <div class="panel-header">
+              <div class="section-heading" style="margin-bottom:0">
+                <div>
+                  <h3>Attempt history</h3>
+                  <p class="subtle">Only your own submitted attempts are shown here.</p>
+                </div>
+              </div>
+            </div>
+            <div class="panel-body" style="padding-right: 0; margin-right: 0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Quiz</th>
+                    <th>Subject</th>
+                    <th>Score</th>
+                    <th>Grade</th>
+                    <th>Time</th>
+                    <th>Warnings</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="student-history-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Tab -->
+        <div class="tab-pane" id="tab-performance">
+          <div class="fixed-panel">
+            <div class="panel-header">
+              <div class="section-heading" style="margin-bottom:0">
+                <div>
+                  <h3>Subject-wise performance</h3>
+                  <p class="subtle">Aggregated statistics based on your past attempts.</p>
+                </div>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div id="subject-performance" class="history-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/js/student.js"></script>
+</body>
+</html>

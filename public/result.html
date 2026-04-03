@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Result • Abhyaas</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="shortcut icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="/index.html">
+        <img src="/assets/logo.png" class="brand-logo" alt="Abhyaas Logo" />
+        <span>ABHYAAS</span>
+      </a>
+      <div data-user-bar></div>
+    </div>
+  </header>
+
+  <main class="container dashboard-shell">
+    <section class="result-hero">
+      <span class="eyebrow">Exam result</span>
+      <h1 class="page-title" id="result-title">Loading result...</h1>
+      <p class="lead" id="result-subtitle"></p>
+      <div class="result-grid" id="result-stats"></div>
+      <div class="toolbar-actions" style="margin-top:18px;">
+        <a id="back-dashboard" class="btn btn-secondary" href="/student.html">Back to Dashboard</a>
+      </div>
+    </section>
+
+    <section class="dashboard-grid" style="margin-top:20px;">
+      <div class="stack">
+        <div class="panel">
+          <h3>Answer review</h3>
+          <div id="review-list" class="review-list" style="margin-top:16px;"></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <h3>Leaderboard</h3>
+          <div id="leaderboard-list" class="rank-list" style="margin-top:16px;"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/js/result.js"></script>
+</body>
+</html>

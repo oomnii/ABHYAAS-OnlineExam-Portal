@@ -1,0 +1,18 @@
+node_modules/
+tests/tmp*.sqlite
+tests/tmp*.sqlite-shm
+tests/tmp*.sqlite-wal
+server/db/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+.DS_Store
+.vscode/
+
+# Logs and test output
+*.log
+test_out*.txt
+test_out*.tap
+tmp_test_out*.txt
+test_results*.txt

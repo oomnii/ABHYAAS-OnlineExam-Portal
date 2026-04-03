@@ -1,0 +1,21 @@
+{
+  "name": "oqep-online-quiz-examination-portal",
+  "version": "1.0.0",
+  "description": "Online Quiz & Examination Portal with Student and Teacher flows, built with Node.js and SQLite.",
+  "type": "module",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "node --watch server/app.js",
+    "test": "node --test tests/api.test.js"
+  },
+  "keywords": [
+    "quiz",
+    "exam",
+    "sqlite",
+    "node",
+    "education"
+  ],
+  "author": "OpenAI",
+  "license": "MIT"
+}
