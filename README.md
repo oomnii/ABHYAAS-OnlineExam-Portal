@@ -1,6 +1,6 @@
 # Abhyaas — Online Quiz & Examination Portal
 
-A premium, full-stack web application for **online quizzes and examinations** featuring a state-of-the-art dark-glassmorphism aesthetic. It connects two roles:
+A premium, full-stack web application for **online examinations Creation + Attempting**. It connects two roles:
 
 - **Student** — attempt quizzes, resume in-progress exams, view personal results, history, and leaderboard.
 - **Teacher** — create quizzes, manage questions, publish/close exams, and inspect ranked student attempts.
