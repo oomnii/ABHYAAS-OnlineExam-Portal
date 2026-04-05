@@ -17,7 +17,7 @@ import {
   listTeacherQuizzes,
   listStudentQuizzes,
   startAttempt,
-  saveAttemptState,
+  saveAnswer,
   addWarning,
   submitAttempt,
   getResultForAttempt,
@@ -126,6 +126,8 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  /* ── Student Dashboard ── */
+
   if (req.method === 'GET' && pathname === '/api/student/dashboard') {
     const user = requireAuth(req, res, 'student');
     if (!user) return;
@@ -163,6 +165,8 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  /* ── Teacher Dashboard ── */
+
   if (req.method === 'GET' && pathname === '/api/teacher/dashboard') {
     const user = requireAuth(req, res, 'teacher');
     if (!user) return;
@@ -180,6 +184,8 @@ async function handleApi(req, res) {
     if (!user) return;
     return sendJson(res, 200, { quizzes: listStudentQuizzes(user.id) });
   }
+
+  /* ── Quiz CRUD ── */
 
   if (req.method === 'POST' && pathname === '/api/quizzes') {
     const user = requireAuth(req, res, 'teacher');
@@ -219,6 +225,8 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  /* ── Question CRUD ── */
+
   if (req.method === 'GET' && /^\/api\/quizzes\/\d+\/questions$/.test(pathname)) {
     const user = requireAuth(req, res);
     if (!user) return;
@@ -239,26 +247,38 @@ async function handleApi(req, res) {
     if (!user) return;
     const quizId = Number(pathname.split('/')[3]);
     const body = await readJsonBody(req);
+
+    const questionType = String(body.questionType || 'mcq').trim();
     const payload = {
+      questionType,
+      explanation: String(body.explanation || '').trim(),
       questionText: String(body.questionText || '').trim(),
-      optionA: String(body.optionA || '').trim(),
-      optionB: String(body.optionB || '').trim(),
-      optionC: String(body.optionC || '').trim(),
-      optionD: String(body.optionD || '').trim(),
-      correctOption: String(body.correctOption || 'A').trim(),
-      marks: Number(body.marks || 1)
+      marks: Number(body.marks || 1),
+      correctOption: String(body.correctOption || '').trim(),
+      optionA: null,
+      optionB: null,
+      optionC: null,
+      optionD: null
     };
-    if (!payload.questionText || !payload.optionA || !payload.optionB || !payload.optionC || !payload.optionD) {
-      return badRequest(res, 'Question text and all four options are required.');
+
+    if (!payload.questionText) return badRequest(res, 'Question text is required.');
+    if (payload.marks < 1) return badRequest(res, 'Marks must be at least 1.');
+    if (!payload.correctOption) return badRequest(res, 'Correct answer is required.');
+
+    if (questionType === 'mcq') {
+      payload.optionA = String(body.optionA || '').trim();
+      payload.optionB = String(body.optionB || '').trim();
+      payload.optionC = String(body.optionC || '').trim();
+      payload.optionD = String(body.optionD || '').trim();
+      if (!payload.optionA || !payload.optionB) return badRequest(res, 'At least options A and B are required for MCQ.');
+      if (!['A', 'B', 'C', 'D'].includes(payload.correctOption)) return badRequest(res, 'Correct option must be A, B, C, or D.');
+    } else if (questionType === 'true_false') {
+      payload.optionA = 'True';
+      payload.optionB = 'False';
+      if (!['True', 'False'].includes(payload.correctOption)) return badRequest(res, 'Correct option must be True or False.');
     }
-    if (!['A', 'B', 'C', 'D'].includes(payload.correctOption) || payload.marks < 1) {
-      return badRequest(res, 'Correct option must be A-D and marks must be at least 1.');
-    }
-    const question = addQuestion({
-      quizId,
-      teacherId: user.id,
-      ...payload
-    });
+
+    const question = addQuestion({ quizId, teacherId: user.id, ...payload });
     if (!question) return forbidden(res);
     return sendJson(res, 201, { question });
   }
@@ -280,43 +300,34 @@ async function handleApi(req, res) {
     return sendJson(res, 200, { ok: true });
   }
 
+  /* ── Attempt Flow ── */
+
   if (req.method === 'POST' && pathname === '/api/attempts/start') {
     const user = requireAuth(req, res, 'student');
     if (!user) return;
     const body = await readJsonBody(req);
     if (!body.quizId) return badRequest(res, 'quizId is required.');
-    const bundle = startAttempt({ quizId: Number(body.quizId), studentId: user.id });
+    const bundle = startAttempt({
+      quizId: Number(body.quizId),
+      studentId: user.id,
+      rollNumber: String(body.rollNumber || '').trim(),
+      studentName: String(body.studentName || '').trim()
+    });
     return sendJson(res, 200, bundle);
   }
 
-  if (req.method === 'GET' && /^\/api\/attempts\/\d+$/.test(pathname)) {
-    const user = requireAuth(req, res);
-    if (!user) return;
-    const attempt = getAttemptById(parseId(pathname));
-    if (!attempt) return notFound(res);
-    const quiz = getQuizById(attempt.quiz_id);
-    const canView = user.id === attempt.student_id || (user.role === 'teacher' && quiz.teacher_id === user.id);
-    if (!canView) return forbidden(res);
-    if (attempt.status === 'submitted') {
-      return sendJson(res, 200, { result: getResultForAttempt(attempt.id, user.id) });
-    }
-    if (user.role !== 'student') return forbidden(res);
-    return sendJson(res, 200, startAttempt({ quizId: attempt.quiz_id, studentId: user.id }));
-  }
-
-  if (req.method === 'POST' && /^\/api\/attempts\/\d+\/save$/.test(pathname)) {
+  if (req.method === 'POST' && /^\/api\/attempts\/\d+\/answer$/.test(pathname)) {
     const user = requireAuth(req, res, 'student');
     if (!user) return;
     const attemptId = Number(pathname.split('/')[3]);
     const body = await readJsonBody(req);
-    const bundle = saveAttemptState({
+    const result = saveAnswer({
       attemptId,
       studentId: user.id,
-      remainingTime: Number(body.remainingTime ?? 0),
-      currentIndex: Number(body.currentIndex ?? 0),
-      answers: body.answers || {}
+      itemId: body.itemId,
+      selectedKey: body.selectedKey
     });
-    return sendJson(res, 200, bundle);
+    return sendJson(res, 200, result);
   }
 
   if (req.method === 'POST' && /^\/api\/attempts\/\d+\/warning$/.test(pathname)) {
@@ -335,6 +346,8 @@ async function handleApi(req, res) {
     const result = submitAttempt({ attemptId, studentId: user.id, remainingTime: Number(body.remainingTime ?? 0) });
     return sendJson(res, 200, { result });
   }
+
+  /* ── Results & Leaderboard ── */
 
   if (req.method === 'GET' && /^\/api\/results\/\d+$/.test(pathname)) {
     const user = requireAuth(req, res);
@@ -377,7 +390,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const pageAliases = new Set(['/', '/index.html', '/login.html', '/signup.html', '/student.html', '/teacher.html', '/quiz.html', '/result.html']);
+    const pageAliases = new Set(['/', '/index.html', '/login.html', '/signup.html', '/student.html', '/teacher.html', '/quiz.html', '/result.html', '/export.html']);
     if (pageAliases.has(url.pathname) || url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/') || url.pathname.startsWith('/assets/')) {
       return serveStaticFile(res, publicDir, url.pathname);
     }
@@ -393,5 +406,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`OQEP server running at http://localhost:${PORT}`);
+  console.log(`Abhyaas server running at http://localhost:${PORT}`);
 });

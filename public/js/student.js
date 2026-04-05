@@ -2,12 +2,16 @@ import { api } from './api.js';
 import { escapeHtml, formatDate, formatDuration, hideMessage, mountUserBar, qs, qsa, requireRole, showMessage } from './common.js';
 
 (async function init() {
-  const user = await requireRole('student');
-  if (!user) return;
-  mountUserBar(user);
-  bindTabs();
-  bindNotes();
-  await loadDashboard();
+  try {
+    const user = await requireRole('student');
+    if (!user) return;
+    mountUserBar(user);
+    bindTabs();
+    bindNotes();
+    await loadDashboard();
+  } catch (error) {
+    console.error('Student Dashboard Init Error:', error);
+  }
 })();
 
 function bindTabs() {
@@ -121,7 +125,7 @@ function renderStats(stats) {
     ['Total attempts', stats.totalAttempted],
     ['Average score', stats.averageScore],
     ['Best score', stats.bestScore],
-    ['Focus note', 'Auto-save active']
+    ['Status', 'Active']
   ].map(([label, value]) => `
     <article class="stat-card">
       <div class="stat-label">${label}</div>
@@ -147,16 +151,14 @@ function renderQuizzes(quizzes) {
         <span class="status-pill ${quiz.status === 'published' ? 'status-published' : 'status-draft'}">${escapeHtml(quiz.status)}</span>
       </div>
       <div class="quiz-meta">
-        <span class="meta-chip">${quiz.is_preset ? 'Practice quiz' : 'Teacher quiz'}</span>
         <span class="meta-chip">${quiz.allow_multiple ? 'Multiple attempts' : 'One attempt'}</span>
         <span class="meta-chip">${quiz.teacher_name ? `By ${escapeHtml(quiz.teacher_name)}` : 'Preset subject'}</span>
       </div>
       <p class="subtle">${escapeHtml(quiz.instructions || 'No instructions added yet.')}</p>
       <div class="toolbar-actions">
-        ${quiz.can_attempt || quiz.has_in_progress
-          ? `<a class="btn btn-primary" href="/quiz.html?quizId=${quiz.id}">${quiz.has_in_progress ? 'Resume Attempt' : 'Start Quiz'}</a>`
-          : `<button class="btn btn-primary" disabled>Attempt Locked</button>`}
-        <button class="btn btn-secondary" ${quiz.can_attempt ? '' : 'disabled'}>${quiz.can_attempt ? 'Attempt allowed' : 'Already attempted'}</button>
+        ${quiz.can_attempt
+          ? `<a class="btn btn-primary" href="/quiz.html?quizId=${quiz.id}">Start Quiz</a>`
+          : `<button class="btn btn-primary" disabled>Already Attempted</button>`}
       </div>
     </article>
   `).join('');

@@ -58,12 +58,14 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quiz_id INTEGER NOT NULL,
+    question_type TEXT NOT NULL DEFAULT 'mcq',
     question_text TEXT NOT NULL,
-    option_a TEXT NOT NULL,
-    option_b TEXT NOT NULL,
-    option_c TEXT NOT NULL,
-    option_d TEXT NOT NULL,
-    correct_option TEXT NOT NULL CHECK (correct_option IN ('A', 'B', 'C', 'D')),
+    explanation TEXT DEFAULT '',
+    option_a TEXT,
+    option_b TEXT,
+    option_c TEXT,
+    option_d TEXT,
+    correct_option TEXT NOT NULL,
     marks INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -74,6 +76,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     quiz_id INTEGER NOT NULL,
     student_id INTEGER NOT NULL,
+    roll_number TEXT,
+    student_actual_name TEXT,
     status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'submitted')),
     start_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     submit_time TEXT,
@@ -99,6 +103,8 @@ db.exec(`
     question_id INTEGER NOT NULL,
     position INTEGER NOT NULL,
     question_text TEXT NOT NULL,
+    question_type TEXT NOT NULL DEFAULT 'mcq',
+    explanation TEXT DEFAULT '',
     options_json TEXT NOT NULL,
     correct_key TEXT NOT NULL,
     marks INTEGER NOT NULL,
@@ -142,114 +148,77 @@ function seedDatabase() {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertQuestion = db.prepare(`
-    INSERT INTO questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, marks)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO questions (quiz_id, question_type, explanation, question_text, option_a, option_b, option_c, option_d, correct_option, marks)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const teacher = insertUser.run('Demo Teacher', 'teacher@abhyaas.local', hashPassword('Teacher@123'), 'teacher');
   insertUser.run('Demo Student', 'student@abhyaas.local', hashPassword('Student@123'), 'student');
 
-  const presets = [
-    {
-      title: 'DSA Practice Set',
-      subject: 'DSA',
-      timer: 15,
-      instructions: 'Practice set for Data Structures and Algorithms. Multiple attempts allowed.',
-      allowMultiple: 1,
-      questions: [
-        ['What is the time complexity of binary search?', 'O(n)', 'O(log n)', 'O(n log n)', 'O(1)', 'B'],
-        ['Which data structure uses FIFO order?', 'Stack', 'Queue', 'Tree', 'Graph', 'B'],
-        ['Which traversal gives sorted order in a BST?', 'Preorder', 'Postorder', 'Inorder', 'Level order', 'C'],
-        ['What is the worst-case complexity of quicksort?', 'O(n)', 'O(n^2)', 'O(log n)', 'O(n log n)', 'B'],
-        ['Which structure is ideal for recursion call tracking?', 'Queue', 'Linked List', 'Stack', 'Heap', 'C']
-      ]
-    },
-    {
-      title: 'Operating Systems Practice Set',
-      subject: 'OS',
-      timer: 15,
-      instructions: 'Practice set for Operating Systems. Multiple attempts allowed.',
-      allowMultiple: 1,
-      questions: [
-        ['Which scheduling algorithm can cause starvation?', 'Round Robin', 'FCFS', 'Priority Scheduling', 'SJF (preemptive)', 'C'],
-        ['What is a deadlock necessary condition?', 'Mutual exclusion', 'Caching', 'Paging', 'Spooling', 'A'],
-        ['Which memory technique avoids external fragmentation?', 'Segmentation', 'Paging', 'Swapping', 'Compaction', 'B'],
-        ['A process in waiting state is generally waiting for?', 'CPU time', 'I/O completion', 'Termination', 'Priority boost', 'B'],
-        ['Which command area stores interrupt handlers?', 'Kernel', 'Cache', 'Stack', 'Heap', 'A']
-      ]
-    },
-    {
-      title: 'DBMS Practice Set',
-      subject: 'DBMS',
-      timer: 15,
-      instructions: 'Practice set for DBMS. Multiple attempts allowed.',
-      allowMultiple: 1,
-      questions: [
-        ['Which normal form removes partial dependency?', '1NF', '2NF', '3NF', 'BCNF', 'B'],
-        ['Which SQL command is used to remove a table?', 'DELETE', 'REMOVE', 'DROP', 'CLEAR', 'C'],
-        ['Which key uniquely identifies a tuple?', 'Foreign key', 'Composite key', 'Primary key', 'Super key only', 'C'],
-        ['A join between two tables without a condition is called?', 'Inner join', 'Cross join', 'Left join', 'Natural join', 'B'],
-        ['ACID property that ensures completed transactions remain saved?', 'Atomicity', 'Consistency', 'Isolation', 'Durability', 'D']
-      ]
-    },
-    {
-      title: 'Computer Networks Practice Set',
-      subject: 'CN',
-      timer: 15,
-      instructions: 'Practice set for Computer Networks. Multiple attempts allowed.',
-      allowMultiple: 1,
-      questions: [
-        ['Which layer handles routing?', 'Transport', 'Network', 'Data Link', 'Session', 'B'],
-        ['HTTP uses which default port?', '20', '21', '80', '110', 'C'],
-        ['Which protocol provides connectionless service?', 'TCP', 'UDP', 'FTP', 'SMTP', 'B'],
-        ['MAC address belongs to which layer?', 'Physical/Data Link', 'Network', 'Transport', 'Application', 'A'],
-        ['Which device separates broadcast domains?', 'Hub', 'Switch', 'Router', 'Repeater', 'C']
-      ]
-    }
-  ];
+  const teacherId = Number(teacher.lastInsertRowid);
 
-  for (const preset of presets) {
-    const totalMarks = preset.questions.length;
-    const quiz = insertQuiz.run(
-      null,
-      preset.title,
-      preset.subject,
-      preset.instructions,
-      preset.timer,
-      totalMarks,
-      'published',
-      1,
-      preset.allowMultiple
-    );
-    const quizId = Number(quiz.lastInsertRowid);
-    for (const item of preset.questions) {
-      insertQuestion.run(quizId, item[0], item[1], item[2], item[3], item[4], item[5], 1);
-    }
-  }
+  /* ── DSA Quiz (10 questions, 10 min, mixed types) ── */
+  const dsaQuiz = insertQuiz.run(teacherId, 'Data Structures & Algorithms', 'DSA', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0);
+  const dsaId = Number(dsaQuiz.lastInsertRowid);
+  // MCQ
+  insertQuestion.run(dsaId, 'mcq', 'Binary search divides the search interval in half each time.', 'What is the time complexity of binary search?', 'O(n)', 'O(log n)', 'O(n log n)', 'O(1)', 'B', 1);
+  insertQuestion.run(dsaId, 'mcq', 'Queue follows First In First Out ordering.', 'Which data structure uses FIFO order?', 'Stack', 'Queue', 'Tree', 'Graph', 'B', 1);
+  insertQuestion.run(dsaId, 'mcq', 'Inorder traversal of BST yields sorted output.', 'Which traversal gives sorted order in a BST?', 'Preorder', 'Postorder', 'Inorder', 'Level order', 'C', 1);
+  insertQuestion.run(dsaId, 'mcq', 'Worst case occurs when pivot is always the smallest or largest.', 'What is the worst-case complexity of quicksort?', 'O(n)', 'O(n^2)', 'O(log n)', 'O(n log n)', 'B', 1);
+  insertQuestion.run(dsaId, 'mcq', 'Stack stores function calls and local variables for recursion.', 'Which structure is ideal for recursion call tracking?', 'Queue', 'Linked List', 'Stack', 'Heap', 'C', 1);
+  // True/False
+  insertQuestion.run(dsaId, 'true_false', 'Array elements are stored in contiguous memory locations.', 'Arrays use contiguous memory allocation.', 'True', 'False', null, null, 'True', 1);
+  insertQuestion.run(dsaId, 'true_false', 'A stack follows Last In First Out (LIFO) principle.', 'A stack follows FIFO order.', 'True', 'False', null, null, 'False', 1);
+  // Fill in the blank
+  insertQuestion.run(dsaId, 'fill_blank', 'BFS uses a queue data structure.', 'BFS (Breadth-First Search) uses a _____ data structure.', null, null, null, null, 'queue', 1);
+  // One-word
+  insertQuestion.run(dsaId, 'one_word', 'A binary tree where every node has at most two children and all levels are fully filled except possibly the last.', 'What type of binary tree has all levels fully filled except possibly the last level?', null, null, null, null, 'complete', 1);
+  // Numerical
+  insertQuestion.run(dsaId, 'numerical', 'A complete binary tree of height 3 has at most 2^4 - 1 = 15 nodes.', 'What is the maximum number of nodes in a complete binary tree of height 3?', null, null, null, null, '15', 1);
+  recalculateQuizMarks(dsaId);
 
-  const teacherQuiz = insertQuiz.run(
-    Number(teacher.lastInsertRowid),
-    'ABHYAAS Sample Teacher Quiz',
-    'Web Engineering',
-    'This is a sample teacher-created quiz. One attempt allowed per student.',
-    20,
-    5,
-    'published',
-    0,
-    0
-  );
-  const teacherQuizId = Number(teacherQuiz.lastInsertRowid);
-  const teacherQuestions = [
-    ['Which property makes web apps responsive across devices?', 'Caching', 'Responsiveness', 'Hashing', 'Routing', 'B'],
-    ['Which HTTP method is commonly used to create data?', 'GET', 'DELETE', 'POST', 'TRACE', 'C'],
-    ['Which storage is best for small browser key-value data?', 'SQLite', 'sessionStorage/localStorage', 'FTP', 'SMTP', 'B'],
-    ['What does REST primarily emphasize?', 'Stateful pages', 'Resource-based APIs', 'Binary trees', 'Operating systems', 'B'],
-    ['Which CSS property controls layout direction in flexbox?', 'display', 'justify-content', 'flex-direction', 'align-self', 'C']
-  ];
-  teacherQuestions.forEach((item) => {
-    insertQuestion.run(teacherQuizId, item[0], item[1], item[2], item[3], item[4], item[5], 1);
-  });
+  /* ── OS Quiz (10 questions, 10 min, mixed types) ── */
+  const osQuiz = insertQuiz.run(teacherId, 'Operating Systems', 'OS', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0);
+  const osId = Number(osQuiz.lastInsertRowid);
+  // MCQ
+  insertQuestion.run(osId, 'mcq', 'Priority scheduling can starve low-priority processes.', 'Which scheduling algorithm can cause starvation?', 'Round Robin', 'FCFS', 'Priority Scheduling', 'SJF', 'C', 1);
+  insertQuestion.run(osId, 'mcq', 'Mutual exclusion is one of the four necessary conditions.', 'What is a necessary condition for deadlock?', 'Mutual exclusion', 'Caching', 'Paging', 'Spooling', 'A', 1);
+  insertQuestion.run(osId, 'mcq', 'Paging divides memory into fixed-size frames eliminating external fragmentation.', 'Which memory technique avoids external fragmentation?', 'Segmentation', 'Paging', 'Swapping', 'Compaction', 'B', 1);
+  insertQuestion.run(osId, 'mcq', 'A waiting process typically awaits I/O completion.', 'A process in waiting state is generally waiting for?', 'CPU time', 'I/O completion', 'Termination', 'Priority boost', 'B', 1);
+  insertQuestion.run(osId, 'mcq', 'The kernel stores interrupt handlers and system calls.', 'Which area stores interrupt handlers?', 'Kernel', 'Cache', 'Stack', 'Heap', 'A', 1);
+  // True/False
+  insertQuestion.run(osId, 'true_false', 'A semaphore is a synchronization tool used to control access to shared resources.', 'Semaphore is used for process synchronization.', 'True', 'False', null, null, 'True', 1);
+  insertQuestion.run(osId, 'true_false', 'Threads within the same process share code section and data section.', 'Threads of the same process do NOT share memory.', 'True', 'False', null, null, 'False', 1);
+  // Fill in the blank
+  insertQuestion.run(osId, 'fill_blank', 'Round Robin scheduling algorithm uses time quantum.', 'The _____ scheduling algorithm uses a fixed time quantum for each process.', null, null, null, null, 'Round Robin', 1);
+  // One-word
+  insertQuestion.run(osId, 'one_word', 'Thrashing occurs when a system spends more time swapping pages than executing.', 'What is the term for excessive page swapping that degrades performance?', null, null, null, null, 'thrashing', 1);
+  // Numerical
+  insertQuestion.run(osId, 'numerical', 'Page size = 4 KB, logical address space = 256 KB. Pages = 256/4 = 64.', 'If page size is 4 KB and logical address space is 256 KB, how many pages are there?', null, null, null, null, '64', 1);
+  recalculateQuizMarks(osId);
+
+  /* ── DBMS Quiz (10 questions, 10 min, mixed types) ── */
+  const dbmsQuiz = insertQuiz.run(teacherId, 'Database Management Systems', 'DBMS', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0);
+  const dbmsId = Number(dbmsQuiz.lastInsertRowid);
+  // MCQ
+  insertQuestion.run(dbmsId, 'mcq', '2NF removes partial dependency from a relation.', 'Which normal form removes partial dependency?', '1NF', '2NF', '3NF', 'BCNF', 'B', 1);
+  insertQuestion.run(dbmsId, 'mcq', 'DROP removes the entire table structure and data.', 'Which SQL command removes a table entirely?', 'DELETE', 'REMOVE', 'DROP', 'CLEAR', 'C', 1);
+  insertQuestion.run(dbmsId, 'mcq', 'Primary key uniquely identifies each tuple in a relation.', 'Which key uniquely identifies a tuple?', 'Foreign key', 'Composite key', 'Primary key', 'Super key', 'C', 1);
+  insertQuestion.run(dbmsId, 'mcq', 'Cross join produces the Cartesian product of two tables.', 'A join without a condition is called?', 'Inner join', 'Cross join', 'Left join', 'Natural join', 'B', 1);
+  insertQuestion.run(dbmsId, 'mcq', 'Durability ensures committed transactions survive system failures.', 'Which ACID property ensures completed transactions remain saved?', 'Atomicity', 'Consistency', 'Isolation', 'Durability', 'D', 1);
+  // True/False
+  insertQuestion.run(dbmsId, 'true_false', 'A foreign key references the primary key of another table.', 'A foreign key references the primary key of another table.', 'True', 'False', null, null, 'True', 1);
+  insertQuestion.run(dbmsId, 'true_false', 'A view is a virtual table based on the result of a query. It stores data on disk.', 'A SQL View stores data physically on disk.', 'True', 'False', null, null, 'False', 1);
+  // Fill in the blank
+  insertQuestion.run(dbmsId, 'fill_blank', 'SELECT is used to retrieve data from a database.', 'The SQL command _____ is used to retrieve data from a database.', null, null, null, null, 'SELECT', 1);
+  // One-word
+  insertQuestion.run(dbmsId, 'one_word', 'Normalization is the process of organizing data to reduce redundancy.', 'What is the process of reducing data redundancy in a database called?', null, null, null, null, 'normalization', 1);
+  // Numerical
+  insertQuestion.run(dbmsId, 'numerical', 'A relation with 5 attributes and 10 tuples has 5 × 10 = 50 cells.', 'How many cells are in a relation with 5 attributes and 10 tuples?', null, null, null, null, '50', 1);
+  recalculateQuizMarks(dbmsId);
 }
+
+/* ── Session Management ── */
 
 function nowPlusDays(days) {
   const date = new Date();
@@ -283,6 +252,8 @@ export function cleanupExpiredSessions() {
   db.prepare("DELETE FROM sessions WHERE datetime(expires_at) <= datetime('now')").run();
 }
 
+/* ── User Management ── */
+
 export function createUser({ name, email, passwordHash, role }) {
   const stmt = db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
   const result = stmt.run(name, email.toLowerCase(), passwordHash, role);
@@ -297,6 +268,8 @@ export function getUserById(id) {
   return db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(id) || null;
 }
 
+/* ── Quiz CRUD ── */
+
 export function createQuiz({ teacherId, title, subject, instructions, timerMinutes, status = 'draft', isPreset = 0, allowMultiple = 0 }) {
   const stmt = db.prepare(`
     INSERT INTO quizzes (teacher_id, title, subject, instructions, timer_minutes, total_marks, status, is_preset, allow_multiple, updated_at)
@@ -309,7 +282,7 @@ export function createQuiz({ teacherId, title, subject, instructions, timerMinut
 export function updateQuiz(quizId, teacherId, payload) {
   const quiz = getQuizById(quizId);
   if (!quiz) return null;
-  if (!quiz.is_preset && quiz.teacher_id !== teacherId) return null;
+  if (quiz.teacher_id !== teacherId) return null;
   const next = {
     title: payload.title ?? quiz.title,
     subject: payload.subject ?? quiz.subject,
@@ -329,7 +302,7 @@ export function updateQuiz(quizId, teacherId, payload) {
 
 export function deleteQuiz(quizId, teacherId) {
   const quiz = getQuizById(quizId);
-  if (!quiz || quiz.teacher_id !== teacherId || quiz.is_preset) return false;
+  if (!quiz || quiz.teacher_id !== teacherId) return false;
   db.prepare('DELETE FROM quizzes WHERE id = ?').run(quizId);
   return true;
 }
@@ -362,30 +335,28 @@ export function listStudentQuizzes(studentId) {
         SELECT 1 FROM attempts a
         WHERE a.quiz_id = q.id AND a.student_id = ? AND a.status = 'submitted'
       ) AS already_attempted,
-      EXISTS (
-        SELECT 1 FROM attempts a
-        WHERE a.quiz_id = q.id AND a.student_id = ? AND a.status = 'in_progress'
-      ) AS has_in_progress,
       (SELECT COUNT(*) FROM questions qs WHERE qs.quiz_id = q.id) AS question_count
     FROM quizzes q
     LEFT JOIN users u ON u.id = q.teacher_id
     WHERE q.status = 'published'
-    ORDER BY q.is_preset DESC, q.created_at DESC
-  `).all(studentId, studentId);
+    ORDER BY q.created_at DESC
+  `).all(studentId);
   return quizzes.map((quiz) => ({
     ...quiz,
     can_attempt: quiz.allow_multiple || !quiz.already_attempted
   }));
 }
 
-export function addQuestion({ quizId, teacherId, questionText, optionA, optionB, optionC, optionD, correctOption, marks }) {
+/* ── Question CRUD ── */
+
+export function addQuestion({ quizId, teacherId, questionType, explanation, questionText, optionA, optionB, optionC, optionD, correctOption, marks }) {
   const quiz = getQuizById(quizId);
-  if (!quiz || quiz.teacher_id !== teacherId || quiz.is_preset) return null;
+  if (!quiz || quiz.teacher_id !== teacherId) return null;
   const stmt = db.prepare(`
-    INSERT INTO questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO questions (quiz_id, question_type, explanation, question_text, option_a, option_b, option_c, option_d, correct_option, marks, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `);
-  const result = stmt.run(quizId, questionText, optionA, optionB, optionC, optionD, correctOption, marks);
+  const result = stmt.run(quizId, questionType || 'mcq', explanation || '', questionText, optionA || null, optionB || null, optionC || null, optionD || null, correctOption, marks);
   recalculateQuizMarks(quizId);
   return getQuestionById(Number(result.lastInsertRowid));
 }
@@ -394,8 +365,10 @@ export function updateQuestion(questionId, teacherId, payload) {
   const question = getQuestionById(questionId);
   if (!question) return null;
   const quiz = getQuizById(question.quiz_id);
-  if (!quiz || quiz.teacher_id !== teacherId || quiz.is_preset) return null;
+  if (!quiz || quiz.teacher_id !== teacherId) return null;
   const next = {
+    question_type: payload.questionType ?? question.question_type,
+    explanation: payload.explanation ?? question.explanation,
     question_text: payload.questionText ?? question.question_text,
     option_a: payload.optionA ?? question.option_a,
     option_b: payload.optionB ?? question.option_b,
@@ -406,9 +379,9 @@ export function updateQuestion(questionId, teacherId, payload) {
   };
   db.prepare(`
     UPDATE questions
-    SET question_text = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, marks = ?, updated_at = CURRENT_TIMESTAMP
+    SET question_type = ?, explanation = ?, question_text = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_option = ?, marks = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(next.question_text, next.option_a, next.option_b, next.option_c, next.option_d, next.correct_option, next.marks, questionId);
+  `).run(next.question_type, next.explanation, next.question_text, next.option_a, next.option_b, next.option_c, next.option_d, next.correct_option, next.marks, questionId);
   recalculateQuizMarks(question.quiz_id);
   return getQuestionById(questionId);
 }
@@ -417,7 +390,7 @@ export function deleteQuestion(questionId, teacherId) {
   const question = getQuestionById(questionId);
   if (!question) return false;
   const quiz = getQuizById(question.quiz_id);
-  if (!quiz || quiz.teacher_id !== teacherId || quiz.is_preset) return false;
+  if (!quiz || quiz.teacher_id !== teacherId) return false;
   db.prepare('DELETE FROM questions WHERE id = ?').run(questionId);
   recalculateQuizMarks(question.quiz_id);
   return true;
@@ -436,14 +409,7 @@ export function recalculateQuizMarks(quizId) {
   db.prepare('UPDATE quizzes SET total_marks = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(row.totalMarks, quizId);
 }
 
-export function getExistingAttempt(quizId, studentId) {
-  return db.prepare(`
-    SELECT * FROM attempts
-    WHERE quiz_id = ? AND student_id = ? AND status = 'in_progress'
-    ORDER BY id DESC
-    LIMIT 1
-  `).get(quizId, studentId) || null;
-}
+/* ── Attempt Logic (No Resume — Single Session Only) ── */
 
 export function getSubmittedAttempt(quizId, studentId) {
   return db.prepare(`
@@ -454,7 +420,7 @@ export function getSubmittedAttempt(quizId, studentId) {
   `).get(quizId, studentId) || null;
 }
 
-export function startAttempt({ quizId, studentId }) {
+export function startAttempt({ quizId, studentId, rollNumber, studentName }) {
   const quiz = getQuizById(quizId);
   if (!quiz || quiz.status !== 'published') {
     throw new Error('Quiz is not available for attempt.');
@@ -462,24 +428,20 @@ export function startAttempt({ quizId, studentId }) {
   if (!quiz.allow_multiple && getSubmittedAttempt(quizId, studentId)) {
     throw new Error('This quiz can be attempted only once.');
   }
-  const existing = getExistingAttempt(quizId, studentId);
-  if (existing) {
-    return getAttemptBundle(existing.id, studentId, false);
-  }
   const sourceQuestions = listQuestionsByQuiz(quizId);
   if (!sourceQuestions.length) {
     throw new Error('Quiz has no questions yet.');
   }
   const shuffledQuestions = shuffleArray(sourceQuestions);
   const insertAttempt = db.prepare(`
-    INSERT INTO attempts (quiz_id, student_id, remaining_time, current_index, status)
-    VALUES (?, ?, ?, 0, 'in_progress')
+    INSERT INTO attempts (quiz_id, student_id, roll_number, student_actual_name, remaining_time, current_index, status)
+    VALUES (?, ?, ?, ?, ?, 0, 'in_progress')
   `);
-  const attemptResult = insertAttempt.run(quizId, studentId, quiz.timer_minutes * 60);
+  const attemptResult = insertAttempt.run(quizId, studentId, rollNumber || '', studentName || '', quiz.timer_minutes * 60);
   const attemptId = Number(attemptResult.lastInsertRowid);
   const insertItem = db.prepare(`
-    INSERT INTO attempt_items (attempt_id, question_id, position, question_text, options_json, correct_key, marks)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO attempt_items (attempt_id, question_id, position, question_text, question_type, explanation, options_json, correct_key, marks)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   shuffledQuestions.forEach((question, index) => {
@@ -489,6 +451,8 @@ export function startAttempt({ quizId, studentId }) {
       snapshot.originalQuestionId,
       index,
       snapshot.questionText,
+      snapshot.questionType,
+      snapshot.explanation,
       JSON.stringify(snapshot.options),
       snapshot.correctKey,
       snapshot.marks
@@ -534,6 +498,8 @@ export function getAttemptBundle(attemptId, studentId, isNew = false) {
       instructions: attempt.instructions,
       timerMinutes: attempt.timer_minutes,
       totalMarks: attempt.total_marks,
+      rollNumber: attempt.roll_number,
+      studentActualName: attempt.student_actual_name,
       status: attempt.status,
       startTime: attempt.start_time,
       remainingTime: attempt.remaining_time,
@@ -545,6 +511,7 @@ export function getAttemptBundle(attemptId, studentId, isNew = false) {
       questionId: item.question_id,
       position: item.position,
       questionText: item.question_text,
+      questionType: item.question_type,
       options: item.options,
       marks: item.marks,
       selectedKey: item.selected_key
@@ -552,26 +519,19 @@ export function getAttemptBundle(attemptId, studentId, isNew = false) {
   };
 }
 
-export function saveAttemptState({ attemptId, studentId, remainingTime, currentIndex, answers }) {
+/* ── Answer Saving (per-question, used during exam) ── */
+
+export function saveAnswer({ attemptId, studentId, itemId, selectedKey }) {
   const attempt = getAttemptById(attemptId);
   if (!attempt || attempt.student_id !== studentId || attempt.status !== 'in_progress') {
     throw new Error('Attempt not found or already submitted.');
   }
-  const updateAttempt = db.prepare(`
-    UPDATE attempts
-    SET remaining_time = ?, current_index = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `);
-  updateAttempt.run(Math.max(0, Number(remainingTime ?? attempt.remaining_time)), Math.max(0, Number(currentIndex ?? attempt.current_index)), attemptId);
-
-  if (answers && typeof answers === 'object') {
-    const updateItem = db.prepare('UPDATE attempt_items SET selected_key = ? WHERE attempt_id = ? AND id = ?');
-    for (const [itemId, selectedKey] of Object.entries(answers)) {
-      updateItem.run(selectedKey || null, attemptId, Number(itemId));
-    }
-  }
-  return getAttemptBundle(attemptId, studentId, false);
+  db.prepare('UPDATE attempt_items SET selected_key = ? WHERE attempt_id = ? AND id = ?')
+    .run(selectedKey || null, attemptId, Number(itemId));
+  return { ok: true };
 }
+
+/* ── Warnings ── */
 
 export function addWarning({ attemptId, studentId }) {
   const attempt = getAttemptById(attemptId);
@@ -587,6 +547,8 @@ export function addWarning({ attemptId, studentId }) {
   return nextWarning;
 }
 
+/* ── Submit & Grade ── */
+
 export function submitAttempt({ attemptId, studentId, remainingTime }) {
   const attempt = getAttemptById(attemptId);
   if (!attempt || attempt.student_id !== studentId || attempt.status !== 'in_progress') {
@@ -600,12 +562,35 @@ export function submitAttempt({ attemptId, studentId, remainingTime }) {
 
   const updateItem = db.prepare('UPDATE attempt_items SET is_correct = ? WHERE id = ?');
   items.forEach((item) => {
-    if (!item.selected_key) {
+    const selected = (item.selected_key !== null && item.selected_key !== undefined) ? String(item.selected_key).trim() : '';
+
+    if (selected === '') {
       unanswered += 1;
       updateItem.run(null, item.id);
       return;
     }
-    if (item.selected_key === item.correct_key) {
+
+    let isCorrect = false;
+    const correctVal = String(item.correct_key).trim();
+
+    if (item.question_type === 'numerical') {
+      const givenNum = parseFloat(selected);
+      const correctNum = parseFloat(correctVal);
+      if (!isNaN(givenNum) && !isNaN(correctNum) && givenNum === correctNum) {
+        isCorrect = true;
+      }
+    } else if (item.question_type === 'mcq' || item.question_type === 'true_false') {
+      if (selected === correctVal) {
+        isCorrect = true;
+      }
+    } else {
+      // Case-insensitive for fill_blank and one_word
+      if (selected.toLowerCase() === correctVal.toLowerCase()) {
+        isCorrect = true;
+      }
+    }
+
+    if (isCorrect) {
       correct += 1;
       score += item.marks;
       updateItem.run(1, item.id);
@@ -638,6 +623,8 @@ export function submitAttempt({ attemptId, studentId, remainingTime }) {
   return getResultForAttempt(attemptId, studentId);
 }
 
+/* ── Results & Leaderboard ── */
+
 export function getResultForAttempt(attemptId, userId) {
   const attempt = getAttemptById(attemptId);
   if (!attempt) return null;
@@ -657,6 +644,8 @@ export function getResultForAttempt(attemptId, userId) {
       subject: attempt.subject,
       studentId: attempt.student_id,
       studentName: attempt.student_name,
+      rollNumber: attempt.roll_number,
+      studentActualName: attempt.student_actual_name,
       score: attempt.score,
       percentage: attempt.percentage,
       grade: attempt.grade,
@@ -680,6 +669,8 @@ export function getResultForAttempt(attemptId, userId) {
     review: items.map((item) => ({
       position: item.position,
       questionText: item.question_text,
+      questionType: item.question_type,
+      explanation: item.explanation,
       options: item.options,
       selectedKey: item.selected_key,
       correctKey: item.correct_key,
@@ -726,6 +717,8 @@ export function getTeacherQuizAnalytics(quizId, teacherId) {
       id: item.id,
       studentId: item.student_id,
       studentName: item.student_name,
+      rollNumber: item.roll_number,
+      studentActualName: item.student_actual_name,
       studentEmail: item.student_email,
       score: item.score,
       percentage: item.percentage,
@@ -739,6 +732,8 @@ export function getTeacherQuizAnalytics(quizId, teacherId) {
     }))
   };
 }
+
+/* ── Student Notes ── */
 
 export function createNote({ studentId, content }) {
   const stmt = db.prepare('INSERT INTO student_notes (student_id, content, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)');
@@ -767,6 +762,8 @@ export function getNoteById(noteId, studentId) {
 export function listNotesByStudent(studentId) {
   return db.prepare('SELECT * FROM student_notes WHERE student_id = ? ORDER BY updated_at DESC').all(studentId);
 }
+
+/* ── Dashboard Aggregation ── */
 
 export function getStudentDashboard(studentId) {
   const attempts = db.prepare(`

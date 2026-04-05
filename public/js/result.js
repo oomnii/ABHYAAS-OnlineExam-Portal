@@ -19,7 +19,8 @@ import { escapeHtml, formatDate, formatDuration, mountUserBar, qs, requireRole }
 })();
 
 function renderResult(result, user) {
-  qs('#result-title').textContent = `${result.quiz.title} • ${result.attempt.studentName}`;
+  const attemptStudentIdentifier = `${result.attempt.rollNumber ? escapeHtml(result.attempt.rollNumber) + ' &mdash; ' : ''}${escapeHtml(result.attempt.studentActualName || result.attempt.studentName)}`;
+  qs('#result-title').innerHTML = `${escapeHtml(result.quiz.title)} &bull; ${attemptStudentIdentifier}`;
   qs('#result-subtitle').textContent = `${result.attempt.subject} • Submitted ${formatDate(result.attempt.submittedAt)}`;
   qs('#back-dashboard').href = user.role === 'teacher' ? '/teacher.html' : '/student.html';
 
@@ -40,14 +41,22 @@ function renderResult(result, user) {
   `).join('');
 
   qs('#review-list').innerHTML = result.review.map((item, index) => {
-    const stateClass = item.selectedKey ? (item.isCorrect ? 'correct' : 'wrong') : 'unanswered';
+    const isTextBased = !['mcq', 'true_false'].includes(item.questionType);
+    const hasAnswered = item.selectedKey != null && item.selectedKey !== '';
+    const stateClass = hasAnswered ? (item.isCorrect ? 'correct' : 'wrong') : 'unanswered';
+    const explanationStr = item.explanation ? `<div style="margin-top:12px; padding:10px; border-left: 4px solid var(--accent-light); background: rgba(0,0,0,0.1);"><strong>Explanation:</strong> <br/>${escapeHtml(item.explanation)}</div>` : '';
+    
+    let optionsStr = '';
+    if (!isTextBased) {
+      optionsStr = `<div class="quiz-meta" style="margin-top:8px;">${Object.entries(item.options).map(([key, value]) => `<span class="meta-chip">${key}. ${escapeHtml(value)}</span>`).join('')}</div>`;
+    }
+
     return `
       <article class="review-card ${stateClass}">
         <strong>Q${index + 1}. ${escapeHtml(item.questionText)}</strong>
-        <p class="subtle">Selected: ${item.selectedKey || 'Not answered'} • Correct: ${item.correctKey}</p>
-        <div class="quiz-meta">
-          ${Object.entries(item.options).map(([key, value]) => `<span class="meta-chip">${key}. ${escapeHtml(value)}</span>`).join('')}
-        </div>
+        <p class="subtle">Selected Answer: ${item.selectedKey || 'Not answered'} • Correct Answer: ${item.correctKey}</p>
+        ${optionsStr}
+        ${explanationStr}
       </article>
     `;
   }).join('');
@@ -55,14 +64,17 @@ function renderResult(result, user) {
   if (!result.leaderboard.length) {
     qs('#leaderboard-list').innerHTML = '<div class="empty-state">No leaderboard entries yet.</div>';
   } else {
-    qs('#leaderboard-list').innerHTML = result.leaderboard.map((row) => `
+    qs('#leaderboard-list').innerHTML = result.leaderboard.map((row) => {
+      const rowIdentifier = `${row.rollNumber ? escapeHtml(row.rollNumber) + ' &mdash; ' : ''}${escapeHtml(row.studentActualName || row.studentName)}`;
+      return `
       <article class="review-card ${row.studentId === result.attempt.studentId ? 'correct' : ''}">
         <div class="quiz-top">
-          <strong>#${row.rank} • ${escapeHtml(row.studentName)}</strong>
+          <strong>#${row.rank} &bull; ${rowIdentifier}</strong>
           <span class="meta-chip">${row.score} marks</span>
         </div>
         <p class="subtle">${row.percentage}% • ${formatDuration(row.timeTakenSeconds)} • ${row.warningCount} warning(s)</p>
       </article>
-    `).join('');
+      `;
+    }).join('');
   }
 }

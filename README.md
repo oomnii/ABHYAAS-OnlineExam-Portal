@@ -1,193 +1,160 @@
-# Abhyaas — Online Quiz & Examination Portal
+# ABHYAAS – Online Quiz & Examination Portal
 
-A premium, full-stack web application for **online quizzes and examinations** featuring a state-of-the-art dark-glassmorphism aesthetic. It connects two roles:
-
-- **Student** — attempt quizzes, resume in-progress exams, view personal results, history, and leaderboard.
-- **Teacher** — create quizzes, manage questions, publish/close exams, and inspect ranked student attempts.
-
-The project is built with:
-
-- **Frontend:** Vanilla HTML, CSS (Premium Dark/Glassmorphism theme), JavaScript
-- **Backend:** Node.js (dependency-free HTTP server)
-- **Database:** SQLite via `node:sqlite` (WAL-mode tracking)
-
-> A modern academic application delivering an engaging, fast, and secure examination workflow with zero external dependencies.
+Abhyaas is a full-stack online examination platform where **teachers** create and publish exams, **students** attempt them live under timed and proctored conditions, and both sides receive detailed analytics dashboards.
 
 ---
 
-## Highlights
+## ✨ Features
 
-- Landing page with about section and role-aware entry points
-- Student and Teacher signup/login
-- Teacher panel to:
-  - create/edit/delete quizzes
-  - set title, subject, instructions, timer, and status
-  - add/edit/delete questions
-  - view quiz-wise analytics and ranked attempt list
-- Student panel to:
-  - attempt **pre-saved subject quizzes** (DSA, OS, DBMS, CN)
-  - attempt **published teacher-created quizzes**
-  - view own history and subject-wise performance only
-- Result dashboard with:
-  - score
-  - percentage
-  - grade
-  - correct / wrong / unanswered count
-  - time taken
-  - answer review
-- Random question + option shuffle per attempt
-- Auto-save + resume after refresh
-- Tab switch warning tracking saved in database
-- Exam-specific leaderboard using ranking rule:
-  1. Higher score
-  2. Higher percentage
-  3. Lower time taken
-- Responsive UI with a custom dark/light warm-blue palette
+### Teacher Panel
+- **Create Quizzes** with title, subject, timer, instructions, and publish status (draft / published / closed)
+- **5 Question Types** — MCQ, True/False, Fill in the Blank, One-word Answer, Numerical
+- **Manage Questions** — Add, edit, delete questions per quiz with marks and correct answers
+- **Quiz Analytics** — Leaderboard view with ranked student attempts (score, %, grade, time taken, warnings)
+- **PDF Export** — Download quiz analytics as a printable report
+
+### Student Panel
+- **Browse Available Quizzes** — View published quizzes with subject, question count, and timer info
+- **Start Quiz** — Enter Name and Roll Number to begin a timed exam session
+- **Live Exam Shell** — Timer, question palette, answer per question (MCQ, text input, numerical)
+- **Anti-Cheating Protection** — Tab-switch warnings, fullscreen enforcement, copy/right-click disabled
+- **View Results** — Score, percentage, grade, rank, and detailed answer review with correct answers
+- **Subject-wise Performance** — Track average scores across subjects
+- **Study Notes** — Personal notes CRUD for revision
+
+### System
+- Role-based authentication (Teacher / Student)
+- Automatic question & option shuffling per attempt for fair exams
+- Single-session exam enforcement (no resume)
+- Seeded demo data: 3 preset quizzes (DBMS, OS, DSA) with 10 questions each
 
 ---
 
-## Demo Accounts
+## 🛠 Tech Stack
 
-These are seeded automatically on first run:
-
-- **Teacher**
-  - Email: `teacher@abhyaas.local`
-  - Password: `Teacher@123`
-- **Student**
-  - Email: `student@abhyaas.local`
-  - Password: `Student@123`
-
-You can also create your own accounts from the signup page.
+| Layer       | Technology                    |
+|-------------|-------------------------------|
+| **Backend** | Node.js (ES Modules)          |
+| **Database**| SQLite (via `node:sqlite`)     |
+| **Frontend**| Vanilla HTML / CSS / JavaScript|
+| **Design**  | Dark glassmorphic theme       |
+| **Auth**    | Cookie-based sessions (bcrypt)|
 
 ---
 
-## Attempt Rules
+## 🚀 Quick Start
 
-- **Teacher-created quizzes:** one attempt per student by default
-- **Pre-saved subject practice quizzes:** multiple attempts allowed
+### Prerequisites
+- **Node.js v22+** (uses experimental `node:sqlite`)
 
-Quiz visibility:
-
-- `Draft` → visible only to teacher
-- `Published` → visible to students
-- `Closed` → no new attempts allowed
-
----
-
-## Run Locally
-
-### Requirements
-
-- Node.js **22+** (recommended, because `node:sqlite` is used)
-
-### Start the project
+### Install & Run
 
 ```bash
+git clone https://github.com/<YOUR_REPO>/abhyaas-online-exam-portal.git
+cd abhyaas-online-exam-portal
 npm install
 npm start
 ```
 
-Then open:
+The server starts at **http://localhost:3000**
 
-```text
-http://localhost:3000
-```
+### Demo Credentials
 
-> This project intentionally uses **no third-party npm dependencies**, so `npm install` is effectively optional. `npm start` is enough on Node 22+.
-
-### Development mode
-
-```bash
-npm run dev
-```
-
-### Run smoke tests
-
-```bash
-npm test
-```
+| Role    | Email                    | Password      |
+|---------|--------------------------|---------------|
+| Teacher | `teacher@abhyaas.local`  | `Teacher@123` |
+| Student | `student@abhyaas.local`  | `Student@123` |
 
 ---
 
-## Project Structure
+## 📂 Project Structure
 
-```text
-OQEP/
-├── package.json
-├── README.md
-├── public/
-│   ├── index.html
-│   ├── login.html
-│   ├── signup.html
-│   ├── student.html
-│   ├── teacher.html
-│   ├── quiz.html
-│   ├── result.html
-│   ├── css/
-│   │   └── styles.css
-│   └── js/
-│       ├── api.js
-│       ├── auth.js
-│       ├── common.js
-│       ├── quiz.js
-│       ├── result.js
-│       ├── student.js
-│       └── teacher.js
+```
+├── public/                     # Frontend static files
+│   ├── assets/                 # Logo and icons
+│   ├── css/styles.css          # Global stylesheet (dark glassmorphic theme)
+│   ├── js/
+│   │   ├── api.js              # Fetch wrapper for API calls
+│   │   ├── auth.js             # Login / Signup logic
+│   │   ├── common.js           # Shared utilities (escapeHtml, formatDuration, etc.)
+│   │   ├── quiz.js             # Live exam session + anti-cheat
+│   │   ├── result.js           # Result page rendering
+│   │   ├── student.js          # Student dashboard logic
+│   │   ├── teacher.js          # Teacher dashboard (Overview/Create/Manage/Analysis)
+│   │   └── export.js           # PDF export logic
+│   ├── index.html              # Landing page
+│   ├── login.html / signup.html
+│   ├── student.html / teacher.html
+│   ├── quiz.html               # Live exam session page
+│   ├── result.html             # Result view page
+│   └── export.html             # PDF export view
 ├── server/
-│   ├── app.js
+│   ├── app.js                  # HTTP server & all API routes
 │   ├── db/
-│   │   └── database.js
+│   │   ├── database.js         # SQLite schema, seed data, all DB operations
+│   │   └── data/               # SQLite database file (auto-created at runtime)
 │   └── utils/
-│       ├── http.js
-│       ├── password.js
-│       └── quiz.js
-└── tests/
-    └── smoke.test.js
+│       ├── http.js             # HTTP helpers (static file serving, JSON parsing)
+│       ├── password.js         # bcrypt hashing & verification
+│       └── quiz.js             # Question shuffling & grading logic
+├── package.json
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## Database Design
+## 📋 API Endpoints
 
-Main tables used in SQLite:
+### Auth
+| Method | Endpoint             | Description              |
+|--------|----------------------|--------------------------|
+| POST   | `/api/auth/signup`   | Create account           |
+| POST   | `/api/auth/login`    | Login                    |
+| POST   | `/api/auth/logout`   | Logout                   |
+| GET    | `/api/auth/me`       | Get current user         |
 
-- `users`
-- `sessions`
-- `quizzes`
-- `questions`
-- `attempts`
-- `attempt_items`
-- `warnings`
+### Teacher
+| Method | Endpoint                                  | Description             |
+|--------|-------------------------------------------|-------------------------|
+| GET    | `/api/teacher/dashboard`                  | Dashboard stats + quizzes|
+| POST   | `/api/quizzes`                            | Create quiz             |
+| PUT    | `/api/quizzes/:id`                        | Update quiz             |
+| DELETE | `/api/quizzes/:id`                        | Delete quiz + questions  |
+| GET    | `/api/quizzes/:id/questions`              | List questions           |
+| POST   | `/api/quizzes/:id/questions`              | Add question             |
+| PUT    | `/api/questions/:id`                      | Update question          |
+| DELETE | `/api/questions/:id`                      | Delete question          |
+| GET    | `/api/teacher/quizzes/:id/analytics`      | Quiz analytics           |
 
-These together handle authentication, quiz creation, attempt state, autosave, answer review, and teacher analytics.
+### Student
+| Method | Endpoint                           | Description              |
+|--------|------------------------------------|--------------------------|
+| GET    | `/api/student/dashboard`           | Dashboard + quizzes      |
+| GET    | `/api/quizzes/student`             | Available quizzes        |
+| POST   | `/api/attempts/start`              | Start new attempt        |
+| POST   | `/api/attempts/:id/answer`         | Save answer per question |
+| POST   | `/api/attempts/:id/warning`        | Record tab-switch warning|
+| POST   | `/api/attempts/:id/submit`         | Submit attempt           |
+| GET    | `/api/results/:id`                 | View result + review     |
 
 ---
 
-## Key Screens
+## 🔒 Anti-Cheating Features
 
-- Landing page
-- Login / Signup
-- Student dashboard
-- Teacher dashboard
-- Quiz instruction + attempt page
-- Result + leaderboard page
+1. **Tab-switch detection** — Warning count increments when student switches tabs
+2. **Fullscreen enforcement** — Exam requests fullscreen; exiting counts as a warning
+3. **Copy/Paste disabled** — Text selection, copy, cut, paste, and right-click are blocked during exams
+4. **Single-session enforcement** — No resume; each quiz start creates a fresh attempt
 
 ---
 
-## Notes
+## 👤 Author
 
-- Passwords are hashed using Node's built-in crypto utilities.
-- Autosave stores current answers, current question index, remaining time, and warning count.
-- Tab switching increments the warning count for the active attempt.
-- The UI palette blends deep navy, sky blue, ivory, and warm neutral browns for a polished academic look.
+**OM SETH** — [GitHub](https://github.com/)
 
 ---
 
-## Future Upgrade Ideas
+## 📜 License
 
-- Express migration (if preferred)
-- Password reset
-- CSV bulk question upload
-- Negative marking
-- PDF result export
-- Deployment with an external database for larger multi-user usage
+MIT

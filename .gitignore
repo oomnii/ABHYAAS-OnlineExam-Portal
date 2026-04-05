@@ -1,18 +1,15 @@
 node_modules/
-tests/tmp*.sqlite
-tests/tmp*.sqlite-shm
-tests/tmp*.sqlite-wal
+
+# Database (auto-created at runtime)
 server/db/data/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+
+# Environment
 .env
+
+# OS / Editor
 .DS_Store
 .vscode/
-
-# Logs and test output
 *.log
-test_out*.txt
-test_out*.tap
-tmp_test_out*.txt
-test_results*.txt

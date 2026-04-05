@@ -30,9 +30,9 @@
       <!-- Sidebar -->
       <aside class="sidebar-nav">
         <button class="nav-item active" data-tab-target="tab-overview">Overview</button>
-        <button class="nav-item" data-tab-target="tab-quizzes">Quizzes</button>
-        <button class="nav-item" data-tab-target="tab-management" id="nav-management">Quiz Management</button>
-        <button class="nav-item" data-tab-target="tab-analytics" id="nav-analytics">Quiz Analytics</button>
+        <button class="nav-item" data-tab-target="tab-create">Create Quiz</button>
+        <button class="nav-item" data-tab-target="tab-manage" id="nav-manage">Manage Quiz</button>
+        <button class="nav-item" data-tab-target="tab-analysis" id="nav-analysis">Analysis</button>
       </aside>
 
       <!-- Main Content -->
@@ -40,10 +40,19 @@
         <!-- Overview Tab -->
         <div class="tab-pane active" id="tab-overview">
           <section class="stats-grid" id="teacher-stats"></section>
+          <div class="panel" style="margin-top: 18px;">
+            <div class="toolbar">
+              <div>
+                <h3>Your Quizzes</h3>
+                <p class="subtle">Click "View" to manage questions or "Delete" to remove a quiz entirely.</p>
+              </div>
+            </div>
+            <div id="overview-quiz-list" style="margin-top:14px;"></div>
+          </div>
         </div>
 
-        <!-- Quizzes Tab -->
-        <div class="tab-pane" id="tab-quizzes">
+        <!-- Create Tab -->
+        <div class="tab-pane" id="tab-create">
           <div class="stack">
             <div class="panel">
               <div class="toolbar">
@@ -87,63 +96,54 @@
                 <div id="quiz-message" class="notice hide"></div>
               </form>
             </div>
-
-            <div class="fixed-panel" style="height: auto; min-height: 350px; max-height: 500px;">
-              <div class="panel-header">
-                <div class="section-heading" style="margin-bottom:0">
-                  <div>
-                    <h3>Your quizzes</h3>
-                    <p class="subtle">Select a quiz to manage its questions or inspect analytics.</p>
-                  </div>
-                </div>
-              </div>
-              <div class="panel-body" style="padding-right: 0; margin-right: 0;">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Status</th>
-                      <th>Questions</th>
-                      <th>Attempts</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="teacher-quiz-body"></tbody>
-                </table>
-              </div>
-            </div>
           </div>
         </div>
 
-        <!-- Quiz Management Tab -->
-        <div class="tab-pane" id="tab-management">
+        <!-- Manage Tab -->
+        <div class="tab-pane" id="tab-manage">
           <div class="stack">
             <div class="panel">
               <div class="toolbar">
                 <div>
-                  <h3>Question management</h3>
-                  <p class="subtle">Select one of your quizzes from the Quizzes tab to add, edit, or delete questions.</p>
+                  <h3>Question Management</h3>
+                  <p class="subtle">Add, edit, or delete questions for the selected quiz.</p>
+                </div>
+                <div class="toolbar-actions">
+                  <button class="btn btn-secondary hide" id="jump-analysis-btn">View Analysis</button>
                 </div>
               </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0px;" class="notice">
-                <span id="selected-quiz-note">Select a quiz from the table first.</span>
-                <button class="btn btn-secondary btn-sm hide" id="jump-analytics-btn" onclick="document.querySelector('[data-tab-target=&quot;tab-analytics&quot;]').click()">View Analytics</button>
+              <div style="display:flex; justify-content:space-between; align-items:center;" class="notice" id="manage-quiz-note">
+                <span>Select a quiz from the Overview tab first.</span>
               </div>
               <form id="question-form" class="form-grid" style="margin-top:18px;">
                 <input type="hidden" name="questionId" />
+
+                <div class="form-row">
+                  <label>Question Type</label>
+                  <select name="questionType" id="question-type-select">
+                    <option value="mcq">Multiple Choice Question (MCQ)</option>
+                    <option value="true_false">True / False</option>
+                    <option value="fill_blank">Fill in the Blanks</option>
+                    <option value="one_word">One-word Answer</option>
+                    <option value="numerical">Numerical Answer</option>
+                  </select>
+                </div>
+
                 <div class="form-row">
                   <label>Question text</label>
-                  <textarea name="questionText"></textarea>
+                  <textarea name="questionText" required></textarea>
                 </div>
-                <div class="form-row two">
-                  <div class="form-row"><label>Option A</label><input type="text" name="optionA" /></div>
-                  <div class="form-row"><label>Option B</label><input type="text" name="optionB" /></div>
-                </div>
-                <div class="form-row two">
-                  <div class="form-row"><label>Option C</label><input type="text" name="optionC" /></div>
-                  <div class="form-row"><label>Option D</label><input type="text" name="optionD" /></div>
-                </div>
-                <div class="form-row two">
+
+                <!-- MCQ options -->
+                <div id="dynamic-options-container">
+                  <div class="form-row two">
+                    <div class="form-row"><label>Option A</label><input type="text" name="optionA" /></div>
+                    <div class="form-row"><label>Option B</label><input type="text" name="optionB" /></div>
+                  </div>
+                  <div class="form-row two">
+                    <div class="form-row"><label>Option C</label><input type="text" name="optionC" /></div>
+                    <div class="form-row"><label>Option D</label><input type="text" name="optionD" /></div>
+                  </div>
                   <div class="form-row">
                     <label>Correct option</label>
                     <select name="correctOption">
@@ -153,37 +153,74 @@
                       <option value="D">D</option>
                     </select>
                   </div>
+                </div>
+
+                <!-- True/False options -->
+                <div id="dynamic-tf-container" class="hide">
                   <div class="form-row">
-                    <label>Marks</label>
-                    <input type="number" name="marks" min="1" value="1" />
+                    <label>Correct Answer (True/False)</label>
+                    <select name="correctTfOption">
+                      <option value="True">True</option>
+                      <option value="False">False</option>
+                    </select>
                   </div>
                 </div>
-                <div class="toolbar-actions">
+
+                <!-- Text Answer options (Fill Blank & One-word) -->
+                <div id="dynamic-answer-container" class="hide">
+                  <div class="form-row">
+                    <label>Correct Answer</label>
+                    <input type="text" name="correctAnswerText" placeholder="Enter the exact correct answer" />
+                  </div>
+                </div>
+
+                <!-- Numerical Answer option -->
+                <div id="dynamic-numeric-container" class="hide">
+                  <div class="form-row">
+                    <label>Correct Answer (Number)</label>
+                    <input type="number" step="any" name="correctAnswerNumeric" placeholder="Enter numeric value" />
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <label>Explanation (Optional)</label>
+                  <textarea name="explanation" placeholder="Provide an explanation for result review..."></textarea>
+                </div>
+
+                <div class="form-row">
+                  <label>Marks</label>
+                  <input type="number" name="marks" min="1" value="1" required />
+                </div>
+
+                <div class="toolbar-actions" style="margin-top: 18px;">
                   <button class="btn btn-primary" type="submit">Save Question</button>
                   <button class="btn btn-secondary" type="button" id="reset-question-form">Clear</button>
                 </div>
                 <div id="question-message" class="notice hide"></div>
               </form>
-              
-              <div id="question-list" class="question-list" style="margin-top:24px; max-height: 400px; overflow-y: auto; padding-right: 8px;"></div>
+
+              <div id="question-list" class="question-list" style="margin-top:24px; max-height: 500px; overflow-y: auto; padding-right: 8px;"></div>
             </div>
           </div>
         </div>
 
-        <!-- Quiz Analytics Tab -->
-        <div class="tab-pane" id="tab-analytics">
+        <!-- Analysis Tab -->
+        <div class="tab-pane" id="tab-analysis">
           <div class="stack">
             <div class="panel">
               <div class="toolbar">
                 <div>
-                  <h3>Quiz analytics</h3>
-                  <p class="subtle">View detailed statistics and attempt history for the specifically selected quiz.</p>
+                  <h3>Quiz Analysis</h3>
+                  <p class="subtle">View detailed statistics and attempt history for the selected quiz.</p>
                 </div>
-                <button class="btn btn-secondary" onclick="document.querySelector('[data-tab-target=&quot;tab-management&quot;]').click()">Back to Management</button>
+                <div class="toolbar-actions">
+                  <a class="btn btn-primary hide" id="export-pdf-btn" target="_blank" href="#" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff;">Export PDF</a>
+                  <button class="btn btn-secondary" id="back-to-manage-btn">Back to Manage</button>
+                </div>
               </div>
-              <div id="selected-quiz-note-analytics" class="notice" style="margin-top: 14px;">Select a quiz from the table first.</div>
+              <div id="analysis-quiz-note" class="notice" style="margin-top: 14px;">Select a quiz from the Overview tab first.</div>
               <div id="analytics-summary" class="empty-state" style="margin-top: 18px;">Analytics will appear when you choose one of your quizzes.</div>
-              <div id="analytics-attempts" class="question-list" style="margin-top:18px; max-height: 400px; overflow-y: auto; padding-right: 8px;"></div>
+              <div id="analytics-attempts" class="question-list" style="margin-top:18px; max-height: 500px; overflow-y: auto; padding-right: 8px;"></div>
             </div>
           </div>
         </div>

@@ -25,11 +25,24 @@
       <h1 class="page-title" id="instruction-title">Loading quiz...</h1>
       <p class="lead" id="instruction-text"></p>
       <div class="quiz-meta" id="instruction-meta" style="margin:18px 0;"></div>
-      <div class="notice">Switching tabs increases your warning count. Progress auto-saves while you attempt the exam.</div>
+      <div class="notice">Switching tabs or exiting fullscreen increases your warning count. Copying text is disabled during the exam.</div>
+
+      <div style="margin: 18px 0; max-width: 400px; display: flex; flex-direction: column; gap: 12px;" id="pre-attempt-form">
+        <div class="form-row">
+          <label>Actual Name <span class="subtle">(Required)</span></label>
+          <input type="text" id="student-name-input" placeholder="Enter your full name" required />
+        </div>
+        <div class="form-row">
+          <label>Roll Number <span class="subtle">(Required)</span></label>
+          <input type="text" id="roll-number-input" placeholder="Enter your Roll No." required />
+        </div>
+      </div>
+
       <div style="margin-top:18px; display:flex; gap:12px; flex-wrap:wrap;">
-        <button class="btn btn-primary" id="start-or-resume">Start Quiz</button>
+        <button class="btn btn-primary" id="start-quiz-btn">Start Quiz</button>
         <a href="/student.html" class="btn btn-secondary">Back to Dashboard</a>
       </div>
+      <div id="quiz-message" class="notice hide" style="margin-top:12px;"></div>
     </div>
 
     <section id="exam-shell" class="exam-layout hide">
@@ -62,11 +75,9 @@
             <button class="btn btn-secondary" id="next-question">Next</button>
           </div>
           <div class="toolbar-actions">
-            <button class="btn btn-ghost" id="save-progress">Save Progress</button>
             <button class="btn btn-primary" id="submit-quiz">Submit Quiz</button>
           </div>
         </div>
-        <div id="quiz-message" class="notice hide"></div>
       </div>
     </section>
   </main>

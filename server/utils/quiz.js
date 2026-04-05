@@ -17,6 +17,39 @@ export function gradeFromPercentage(percentage) {
 }
 
 export function buildShuffledQuestion(question) {
+  // True/False: only show True and False options, no shuffling
+  if (question.question_type === 'true_false') {
+    return {
+      questionType: question.question_type,
+      explanation: question.explanation,
+      questionText: question.question_text,
+      options: { A: 'True', B: 'False' },
+      marks: question.marks,
+      correctKey: question.correct_option === 'True' ? 'A' : 'B',
+      originalQuestionId: question.id,
+      correctOriginalKey: question.correct_option,
+      reverseMap: { A: 'A', B: 'B' },
+      originalCorrectText: question.correct_option
+    };
+  }
+
+  // Non-MCQ types (fill_blank, one_word, numerical): no options to shuffle
+  if (question.question_type !== 'mcq') {
+    return {
+      questionType: question.question_type,
+      explanation: question.explanation,
+      questionText: question.question_text,
+      options: {},
+      marks: question.marks,
+      correctKey: question.correct_option,
+      originalQuestionId: question.id,
+      correctOriginalKey: question.correct_option,
+      reverseMap: {},
+      originalCorrectText: question.correct_option
+    };
+  }
+
+  // MCQ: shuffle the 4 options
   const options = [
     { key: 'A', text: question.option_a },
     { key: 'B', text: question.option_b },
@@ -24,7 +57,6 @@ export function buildShuffledQuestion(question) {
     { key: 'D', text: question.option_d }
   ];
   const shuffled = shuffleArray(options);
-  const correct = shuffled.find((item) => item.key === question.correct_option);
   const mapped = {};
   const labelOrder = ['A', 'B', 'C', 'D'];
   const reverseMap = {};
@@ -38,13 +70,15 @@ export function buildShuffledQuestion(question) {
 
   return {
     questionText: question.question_text,
+    questionType: question.question_type,
+    explanation: question.explanation,
     options: mapped,
     marks: question.marks,
     correctKey,
     originalQuestionId: question.id,
     correctOriginalKey: question.correct_option,
     reverseMap,
-    originalCorrectText: correct?.text || ''
+    originalCorrectText: shuffled.find((item) => item.key === question.correct_option)?.text || ''
   };
 }
 
@@ -65,6 +99,8 @@ export function computeLeaderboardRows(attempts) {
     rank: index + 1,
     studentId: attempt.student_id,
     studentName: attempt.student_name,
+    rollNumber: attempt.roll_number,
+    studentActualName: attempt.student_actual_name,
     attemptId: attempt.id,
     score: attempt.score,
     percentage: attempt.percentage,
