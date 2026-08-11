@@ -2,6 +2,12 @@
 
 Abhyaas is a full-stack online examination platform where **teachers** create and publish exams, **students** attempt them live under timed and proctored conditions, and both sides receive detailed analytics dashboards.
 
+## 🌐 Live Demo
+
+[![Open Live Demo](https://img.shields.io/badge/Live_Demo-Open_ABHYAAS-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://abhyaas-online-exam-portal.onrender.com)
+
+> **Note:** The application uses Render’s free tier, so the first load may take around 30–60 seconds after inactivity.
+
 ---
 
 ## ✨ Features
