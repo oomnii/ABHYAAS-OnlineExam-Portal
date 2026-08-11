@@ -4,17 +4,13 @@ Abhyaas is a full-stack online examination portal where **teachers** create and 
 
 ## Live demo
 
-**Open live app:** [https://abhyaas-online-exam-portal.onrender.com](https://abhyaas-online-exam-portal.onrender.com)
+[![Open Live Demo](https://img.shields.io/badge/Live_Demo-Open_ABHYAAS-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://abhyaas-online-exam-portal.onrender.com)
 
-> Render free tier may take about 30–60 seconds to wake after inactivity.
+**Live app:** [https://abhyaas-online-exam-portal.onrender.com](https://abhyaas-online-exam-portal.onrender.com)
 
 **Repository:** [https://github.com/oomnii/ABHYAAS-OnlineExam-Portal](https://github.com/oomnii/ABHYAAS-OnlineExam-Portal)
 
-## 🌐 Live Demo
-
-[![Open Live Demo](https://img.shields.io/badge/Live_Demo-Open_ABHYAAS-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://abhyaas-online-exam-portal.onrender.com)
-
-> **Note:** The application uses Render’s free tier, so the first load may take around 30–60 seconds after inactivity.
+> Render free tier may take about 30–60 seconds to wake after inactivity.
 
 ---
 
