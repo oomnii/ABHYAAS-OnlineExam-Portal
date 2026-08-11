@@ -18,7 +18,8 @@
       </a>
       <nav class="nav-links">
         <a href="/index.html">Home</a>
-        <a href="/login.html" class="pill-button">Login</a>
+        <a href="/role-select.html" class="pill-button">Change role</a>
+        <a href="/login.html" class="pill-button" id="signup-login-top">Login</a>
       </nav>
     </div>
   </header>
@@ -26,31 +27,44 @@
     <section class="auth-card single">
       <div class="auth-main">
         <h2 style="text-align: center; margin-bottom: 6px;">Create Account</h2>
-        <p class="subtle" style="text-align: center; margin-bottom: 20px;">Sign up as a Student or Teacher</p>
+        <p class="subtle" style="text-align: center; margin-bottom: 8px;" id="signup-role-line">Loading…</p>
+        <p class="subtle" style="text-align: center; margin-bottom: 20px; font-size: 0.85rem;">Wrong role? <a href="/role-select.html" style="color:var(--sky); font-weight:700;">Go back to role selection</a>.</p>
         <form id="signup-form" class="form-grid">
+          <input type="hidden" name="role" id="signup-role-input" value="" />
           <div class="form-row">
             <label>Full name</label>
-            <input type="text" name="name" placeholder="Enter full name" required />
+            <input type="text" name="name" placeholder="Enter full name" required autocomplete="name" />
           </div>
           <div class="form-row">
             <label>Email</label>
-            <input type="email" name="email" placeholder="you@example.com" required />
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" />
           </div>
           <div class="form-row">
             <label>Password</label>
-            <input type="password" name="password" placeholder="Minimum 6 characters" required />
+            <input type="password" name="password" placeholder="Minimum 6 characters" required autocomplete="new-password" />
           </div>
-          <div class="form-row">
-            <label>Select role</label>
-            <div class="radio-row">
-              <label class="role-choice"><input type="radio" name="role" value="student" checked /> Student</label>
-              <label class="role-choice"><input type="radio" name="role" value="teacher" /> Teacher</label>
+          <div id="student-profile-fields" class="hide">
+            <div class="form-row">
+              <label>Branch</label>
+              <select name="branch" id="signup-branch">
+                <option value="">Select branch</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Semester</label>
+              <select name="semester" id="signup-semester">
+                <option value="">Select semester</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label>Registration No.</label>
+              <input type="text" name="registrationNo" placeholder="e.g. 21CSE001" maxlength="40" autocomplete="off" />
             </div>
           </div>
           <button class="btn btn-primary" type="submit" style="width:100%; margin-top:8px;">Create Account</button>
           <div id="signup-message" class="notice hide"></div>
         </form>
-        <p class="subtle" style="text-align:center; margin-top:16px;">Already have an account? <a href="/login.html" style="color:var(--sky); font-weight:700;">Login here</a>.</p>
+        <p class="subtle" style="text-align:center; margin-top:16px;">Already have an account? <a href="/login.html" id="signup-login-link" style="color:var(--sky); font-weight:700;">Login here</a>.</p>
       </div>
     </section>
   </main>

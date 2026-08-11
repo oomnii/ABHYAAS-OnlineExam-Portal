@@ -1,4 +1,5 @@
 import { api } from './api.js';
+import { BRANCH_OPTIONS, SEMESTER_OPTIONS } from './constants.js';
 import { escapeHtml, formatDate, formatDuration, hideMessage, mountUserBar, qs, qsa, quizStatusClass, requireRole, showMessage } from './common.js';
 
 let selectedQuizId = null;
@@ -9,6 +10,7 @@ let quizzes = [];
     const user = await requireRole('teacher');
     if (!user) return;
     mountUserBar(user);
+    fillQuizTargetSelects();
     bindTabs();
     bindForms();
     await loadDashboard();
@@ -16,6 +18,37 @@ let quizzes = [];
     console.error('Teacher Dashboard Init Error:', error);
   }
 })();
+
+function fillQuizTargetSelects() {
+  const branchSel = qs('#quiz-target-branch');
+  const semSel = qs('#quiz-target-semester');
+  if (branchSel && !branchSel.dataset.filled) {
+    BRANCH_OPTIONS.forEach((b) => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = b;
+      branchSel.appendChild(opt);
+    });
+    branchSel.dataset.filled = '1';
+  }
+  if (semSel && !semSel.dataset.filled) {
+    SEMESTER_OPTIONS.forEach((s) => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = `Semester ${s}`;
+      semSel.appendChild(opt);
+    });
+    semSel.dataset.filled = '1';
+  }
+}
+
+function formatQuizAudience(quiz) {
+  const b = quiz.target_branch ? String(quiz.target_branch).trim() : '';
+  const s = quiz.target_semester ? String(quiz.target_semester).trim() : '';
+  const left = b || 'All branches';
+  const right = s ? `Sem ${s}` : 'All semesters';
+  return `${left} • ${right}`;
+}
 
 /* ── Tab Navigation ── */
 
@@ -120,7 +153,7 @@ function renderOverviewQuizList(items) {
       <div>
         <strong>${escapeHtml(quiz.title)}</strong>
         <span class="status-pill ${quizStatusClass(quiz.status)}" style="margin-left:10px;">${escapeHtml(quiz.status)}</span>
-        <p class="subtle" style="margin:4px 0 0;">${escapeHtml(quiz.subject)} • ${quiz.question_count} questions • ${quiz.attempt_count} attempts</p>
+        <p class="subtle" style="margin:4px 0 0;">${escapeHtml(quiz.subject)} • ${quiz.question_count} questions • ${quiz.attempt_count} attempts • <span title="Targeting">${escapeHtml(formatQuizAudience(quiz))}</span></p>
       </div>
       <div class="toolbar-actions">
         <button class="btn btn-secondary" data-action="view" data-id="${quiz.id}">View</button>
@@ -176,11 +209,19 @@ function populateQuizForm(quizId) {
   form.timerMinutes.value = quiz.timer_minutes;
   form.status.value = quiz.status;
   form.instructions.value = quiz.instructions || '';
+  const tb = qs('#quiz-target-branch');
+  const ts = qs('#quiz-target-semester');
+  if (tb) tb.value = quiz.target_branch || '';
+  if (ts) ts.value = quiz.target_semester || '';
 }
 
 function resetQuizForm() {
   qs('#quiz-form').reset();
   qs('#quiz-form [name="quizId"]').value = '';
+  const tb = qs('#quiz-target-branch');
+  const ts = qs('#quiz-target-semester');
+  if (tb) tb.value = '';
+  if (ts) ts.value = '';
   hideMessage(qs('#quiz-message'));
 }
 
@@ -211,8 +252,8 @@ async function selectQuiz(quizId, tab = 'tab-manage') {
   selectedQuizId = quizId;
   const quiz = quizzes.find((item) => item.id === quizId);
   if (!quiz) return;
-  qs('#manage-quiz-note').innerHTML = `<span>Selected: <strong>${escapeHtml(quiz.title)}</strong> • ${escapeHtml(quiz.subject)} • ${quiz.question_count} questions</span>`;
-  qs('#analysis-quiz-note').innerHTML = `Selected: <strong>${escapeHtml(quiz.title)}</strong> • ${escapeHtml(quiz.subject)}`;
+  qs('#manage-quiz-note').innerHTML = `<span>Selected: <strong>${escapeHtml(quiz.title)}</strong> • ${escapeHtml(quiz.subject)} • ${quiz.question_count} questions • ${escapeHtml(formatQuizAudience(quiz))}</span>`;
+  qs('#analysis-quiz-note').innerHTML = `Selected: <strong>${escapeHtml(quiz.title)}</strong> • ${escapeHtml(quiz.subject)} • ${escapeHtml(formatQuizAudience(quiz))}`;
   qs('#jump-analysis-btn')?.classList.remove('hide');
   const exportBtn = qs('#export-pdf-btn');
   if (exportBtn) {
@@ -380,14 +421,20 @@ async function loadAnalytics(quizId) {
     }
 
     attemptsTarget.innerHTML = analytics.leaderboard.map((row) => {
-      const studentIdentifier = `${row.rollNumber ? escapeHtml(row.rollNumber) + ' &mdash; ' : ''}${escapeHtml(row.studentActualName || row.studentName)}`;
+      const displayName = escapeHtml(row.studentActualName || row.studentName || '');
+      const roll = row.rollNumber ? escapeHtml(row.rollNumber) : '';
+      const studentIdentifier = roll ? `${roll} &mdash; ${displayName}` : displayName;
+      const profileBits = [row.studentBranch, row.studentSemester ? `Sem ${row.studentSemester}` : '']
+        .filter(Boolean)
+        .map((x) => escapeHtml(String(x)));
+      const profileLine = profileBits.length ? ` • ${profileBits.join(' • ')}` : '';
       return `
       <article class="review-card">
         <div class="quiz-top">
           <strong>#${row.rank} • ${studentIdentifier}</strong>
           <span class="meta-chip">${row.score} marks</span>
         </div>
-        <p class="subtle">${row.percentage}% • ${formatDuration(row.timeTakenSeconds)} • ${row.warningCount} warning(s)</p>
+        <p class="subtle">${row.percentage}% • ${formatDuration(row.timeTakenSeconds)} • ${row.warningCount} warning(s)${profileLine}</p>
         <a class="btn btn-secondary" href="/result.html?attemptId=${row.attemptId}">Open result view</a>
       </article>
       `;

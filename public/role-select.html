@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Choose your role • Abhyaas</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png" />
+  <link rel="shortcut icon" href="/assets/logo.png" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="/index.html">
+        <img src="/assets/logo.png" class="brand-logo" alt="Abhyaas Logo" />
+        <span>ABHYAAS</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/index.html">Home</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container auth-shell">
+    <section class="auth-card single" style="max-width: 720px;">
+      <div class="auth-main">
+        <h2 style="text-align: center; margin-bottom: 6px;">How are you joining?</h2>
+        <p class="subtle" style="text-align: center; margin-bottom: 24px;">Pick your role, then log in or create an account. You can switch paths anytime from this page.</p>
+        <div class="form-row two" style="gap: 16px;">
+          <div class="panel" style="padding: 20px; margin: 0;">
+            <h3 style="margin: 0 0 8px; font-size: 1.1rem;">Student</h3>
+            <p class="subtle" style="margin-bottom: 16px;">Attempt published quizzes and track your performance.</p>
+            <div class="toolbar-actions" style="flex-direction: column; align-items: stretch; gap: 10px;">
+              <a class="btn btn-primary" href="/login.html?role=student" style="text-align:center;">Login as Student</a>
+              <a class="btn btn-secondary" href="/signup.html?role=student" style="text-align:center;">Create Student Account</a>
+            </div>
+          </div>
+          <div class="panel" style="padding: 20px; margin: 0;">
+            <h3 style="margin: 0 0 8px; font-size: 1.1rem;">Teacher</h3>
+            <p class="subtle" style="margin-bottom: 16px;">Create quizzes, publish exams, and review submissions.</p>
+            <div class="toolbar-actions" style="flex-direction: column; align-items: stretch; gap: 10px;">
+              <a class="btn btn-primary" href="/login.html?role=teacher" style="text-align:center;">Login as Teacher</a>
+              <a class="btn btn-secondary" href="/signup.html?role=teacher" style="text-align:center;">Create Teacher Account</a>
+            </div>
+          </div>
+        </div>
+        <p class="subtle" style="text-align:center; margin-top: 22px;">Need the landing page? <a href="/index.html" style="color:var(--sky); font-weight:700;">Back to home</a>.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

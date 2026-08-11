@@ -33,6 +33,12 @@ import {
 } from './db/database.js';
 import { hashPassword, verifyPassword } from './utils/password.js';
 import { badRequest, forbidden, getRequestUrl, notFound, parseCookies, readJsonBody, sendJson, serverError, serveStaticFile, unauthorized } from './utils/http.js';
+import {
+  isKnownBranch,
+  isKnownSemester,
+  normalizeQuizTarget,
+  validateStudentRegistrationNo
+} from './utils/academic.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,6 +75,19 @@ function validateEmail(email) {
   return /.+@.+\..+/.test(email);
 }
 
+function userForClient(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    branch: row.branch ?? null,
+    semester: row.semester ?? null,
+    registrationNo: row.registration_no ?? null
+  };
+}
+
 function parseId(pathname) {
   const parts = pathname.split('/').filter(Boolean);
   return Number(parts[parts.length - 1]);
@@ -84,7 +103,7 @@ async function handleApi(req, res) {
 
   if (req.method === 'GET' && pathname === '/api/auth/me') {
     const user = getAuthUser(req);
-    return sendJson(res, 200, { user: user || null });
+    return sendJson(res, 200, { user: userForClient(user) });
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/signup') {
@@ -99,10 +118,34 @@ async function handleApi(req, res) {
     if (password.length < 6) return badRequest(res, 'Password should be at least 6 characters.');
     if (getUserByEmail(email)) return badRequest(res, 'Email already registered.');
 
-    const user = createUser({ name, email, passwordHash: hashPassword(password), role });
+    let branch = null;
+    let semester = null;
+    let registrationNo = null;
+    if (role === 'student') {
+      branch = String(body.branch || '').trim();
+      semester = String(body.semester || '').trim();
+      registrationNo = String(body.registrationNo || body.registration_no || '').trim();
+      if (!branch || !semester || !registrationNo) {
+        return badRequest(res, 'Branch, semester, and registration number are required for students.');
+      }
+      if (!isKnownBranch(branch)) return badRequest(res, 'Select a valid branch.');
+      if (!isKnownSemester(semester)) return badRequest(res, 'Select a valid semester.');
+      const regErr = validateStudentRegistrationNo(registrationNo);
+      if (regErr) return badRequest(res, regErr);
+    }
+
+    const user = createUser({
+      name,
+      email,
+      passwordHash: hashPassword(password),
+      role,
+      branch,
+      semester,
+      registrationNo
+    });
     const token = createSession(user.id);
     setSessionCookie(res, token);
-    return sendJson(res, 201, { user });
+    return sendJson(res, 201, { user: userForClient(user) });
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/login') {
@@ -113,10 +156,9 @@ async function handleApi(req, res) {
     if (!user || !verifyPassword(password, user.password_hash)) {
       return badRequest(res, 'Invalid credentials.');
     }
-    const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     const token = createSession(user.id);
     setSessionCookie(res, token);
-    return sendJson(res, 200, { user: safeUser });
+    return sendJson(res, 200, { user: userForClient(user) });
   }
 
   if (req.method === 'POST' && pathname === '/api/auth/logout') {
@@ -194,6 +236,15 @@ async function handleApi(req, res) {
     if (!body.title || !body.subject || !body.timerMinutes) return badRequest(res, 'Title, subject, and timer are required.');
     const timerMinutes = Number(body.timerMinutes);
     if (!Number.isFinite(timerMinutes) || timerMinutes < 1) return badRequest(res, 'Timer should be at least 1 minute.');
+    const targetBranch = normalizeQuizTarget(body.targetBranch ?? body.target_branch);
+    const targetSemester = normalizeQuizTarget(body.targetSemester ?? body.target_semester);
+    if (targetBranch != null && !isKnownBranch(targetBranch)) {
+      return badRequest(res, 'Select a valid target branch or All.');
+    }
+    if (targetSemester != null && !isKnownSemester(targetSemester)) {
+      return badRequest(res, 'Select a valid target semester or All.');
+    }
+
     const quiz = createQuiz({
       teacherId: user.id,
       title: String(body.title).trim(),
@@ -201,7 +252,9 @@ async function handleApi(req, res) {
       instructions: String(body.instructions || '').trim(),
       timerMinutes,
       status: body.status || 'draft',
-      allowMultiple: body.allowMultiple ? 1 : 0
+      allowMultiple: body.allowMultiple ? 1 : 0,
+      targetBranch,
+      targetSemester
     });
     return sendJson(res, 201, { quiz });
   }
@@ -211,6 +264,16 @@ async function handleApi(req, res) {
     if (!user) return;
     const quizId = parseId(pathname);
     const body = await readJsonBody(req);
+    if (body.targetBranch !== undefined || body.target_branch !== undefined) {
+      const tb = normalizeQuizTarget(body.targetBranch ?? body.target_branch);
+      if (tb != null && !isKnownBranch(tb)) return badRequest(res, 'Select a valid target branch or All.');
+      body.targetBranch = tb;
+    }
+    if (body.targetSemester !== undefined || body.target_semester !== undefined) {
+      const ts = normalizeQuizTarget(body.targetSemester ?? body.target_semester);
+      if (ts != null && !isKnownSemester(ts)) return badRequest(res, 'Select a valid target semester or All.');
+      body.targetSemester = ts;
+    }
     const quiz = updateQuiz(quizId, user.id, body);
     if (!quiz) return forbidden(res);
     return sendJson(res, 200, { quiz });
@@ -390,7 +453,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const pageAliases = new Set(['/', '/index.html', '/login.html', '/signup.html', '/student.html', '/teacher.html', '/quiz.html', '/result.html', '/export.html']);
+    const pageAliases = new Set([
+      '/',
+      '/index.html',
+      '/login.html',
+      '/signup.html',
+      '/role-select.html',
+      '/student.html',
+      '/teacher.html',
+      '/quiz.html',
+      '/result.html',
+      '/export.html'
+    ]);
     if (pageAliases.has(url.pathname) || url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/') || url.pathname.startsWith('/assets/')) {
       return serveStaticFile(res, publicDir, url.pathname);
     }
@@ -398,7 +472,12 @@ const server = http.createServer(async (req, res) => {
     return notFound(res);
   } catch (error) {
     if (error.message === 'Invalid JSON body') return badRequest(res, error.message);
-    if (error.message && /Quiz is not available|attempted only once|has no questions|Attempt not found/.test(error.message)) {
+    if (
+      error.message &&
+      /Quiz is not available|attempted only once|has no questions|Attempt not found|not assigned to your branch or semester/.test(
+        error.message
+      )
+    ) {
       return badRequest(res, error.message);
     }
     return serverError(res, error);

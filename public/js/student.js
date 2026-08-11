@@ -134,6 +134,14 @@ function renderStats(stats) {
   `).join('');
 }
 
+function formatQuizAudienceStudent(quiz) {
+  const b = quiz.target_branch ? String(quiz.target_branch).trim() : '';
+  const s = quiz.target_semester ? String(quiz.target_semester).trim() : '';
+  const left = b || 'All branches';
+  const right = s ? `Sem ${s}` : 'All semesters';
+  return `${left} • ${right}`;
+}
+
 function renderQuizzes(quizzes) {
   const target = qs('#available-quizzes');
   if (!quizzes.length) {
@@ -153,6 +161,7 @@ function renderQuizzes(quizzes) {
       <div class="quiz-meta">
         <span class="meta-chip">${quiz.allow_multiple ? 'Multiple attempts' : 'One attempt'}</span>
         <span class="meta-chip">${quiz.teacher_name ? `By ${escapeHtml(quiz.teacher_name)}` : 'Preset subject'}</span>
+        <span class="meta-chip">${escapeHtml(formatQuizAudienceStudent(quiz))}</span>
       </div>
       <p class="subtle">${escapeHtml(quiz.instructions || 'No instructions added yet.')}</p>
       <div class="toolbar-actions">

@@ -19,9 +19,15 @@ import { escapeHtml, formatDate, formatDuration, mountUserBar, qs, requireRole }
 })();
 
 function renderResult(result, user) {
-  const attemptStudentIdentifier = `${result.attempt.rollNumber ? escapeHtml(result.attempt.rollNumber) + ' &mdash; ' : ''}${escapeHtml(result.attempt.studentActualName || result.attempt.studentName)}`;
+  const displayName = escapeHtml(result.attempt.studentActualName || result.attempt.studentName || '');
+  const roll = result.attempt.rollNumber ? escapeHtml(result.attempt.rollNumber) : '';
+  const attemptStudentIdentifier = roll ? `${roll} &mdash; ${displayName}` : displayName;
   qs('#result-title').innerHTML = `${escapeHtml(result.quiz.title)} &bull; ${attemptStudentIdentifier}`;
-  qs('#result-subtitle').textContent = `${result.attempt.subject} • Submitted ${formatDate(result.attempt.submittedAt)}`;
+  const profileBits = [result.attempt.studentBranch, result.attempt.studentSemester ? `Sem ${result.attempt.studentSemester}` : '']
+    .filter(Boolean)
+    .map((x) => escapeHtml(String(x)));
+  const profileSuffix = profileBits.length ? ` • ${profileBits.join(' • ')}` : '';
+  qs('#result-subtitle').textContent = `${result.attempt.subject} • Submitted ${formatDate(result.attempt.submittedAt)}${profileSuffix}`;
   qs('#back-dashboard').href = user.role === 'teacher' ? '/teacher.html' : '/student.html';
 
   qs('#result-stats').innerHTML = [
@@ -65,14 +71,20 @@ function renderResult(result, user) {
     qs('#leaderboard-list').innerHTML = '<div class="empty-state">No leaderboard entries yet.</div>';
   } else {
     qs('#leaderboard-list').innerHTML = result.leaderboard.map((row) => {
-      const rowIdentifier = `${row.rollNumber ? escapeHtml(row.rollNumber) + ' &mdash; ' : ''}${escapeHtml(row.studentActualName || row.studentName)}`;
+      const name = escapeHtml(row.studentActualName || row.studentName || '');
+      const rno = row.rollNumber ? escapeHtml(row.rollNumber) : '';
+      const rowIdentifier = rno ? `${rno} &mdash; ${name}` : name;
+      const profileBits = [row.studentBranch, row.studentSemester ? `Sem ${row.studentSemester}` : '']
+        .filter(Boolean)
+        .map((x) => escapeHtml(String(x)));
+      const profileLine = profileBits.length ? ` • ${profileBits.join(' • ')}` : '';
       return `
       <article class="review-card ${row.studentId === result.attempt.studentId ? 'correct' : ''}">
         <div class="quiz-top">
           <strong>#${row.rank} &bull; ${rowIdentifier}</strong>
           <span class="meta-chip">${row.score} marks</span>
         </div>
-        <p class="subtle">${row.percentage}% • ${formatDuration(row.timeTakenSeconds)} • ${row.warningCount} warning(s)</p>
+        <p class="subtle">${row.percentage}% • ${formatDuration(row.timeTakenSeconds)} • ${row.warningCount} warning(s)${profileLine}</p>
       </article>
       `;
     }).join('');

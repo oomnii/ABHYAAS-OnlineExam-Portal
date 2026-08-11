@@ -47,7 +47,10 @@ function renderReport(quiz, questions, analytics) {
         <thead>
           <tr>
             <th>Roll No.</th>
-            <th>Name</th>
+            <th>Name (as entered)</th>
+            <th>Branch</th>
+            <th>Semester</th>
+            <th>Reg. No.</th>
             <th>Score</th>
             <th>Timing</th>
             <th>Warnings (Anti-cheat)</th>
@@ -58,6 +61,9 @@ function renderReport(quiz, questions, analytics) {
             <tr>
               <td>${escapeHtml(a.rollNumber || '-')}</td>
               <td>${escapeHtml(a.studentActualName || a.studentName)}</td>
+              <td>${escapeHtml(a.studentBranch || '-')}</td>
+              <td>${escapeHtml(a.studentSemester != null && String(a.studentSemester) !== '' ? String(a.studentSemester) : '-')}</td>
+              <td>${escapeHtml(a.studentRegistrationNo || '-')}</td>
               <td>${a.score}</td>
               <td>${formatDuration(a.timeTakenSeconds)}</td>
               <td>${a.warningCount}</td>

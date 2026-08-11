@@ -136,29 +136,56 @@ db.exec(`
   );
 `);
 
+function tableHasColumn(tableName, columnName) {
+  const rows = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  return rows.some((row) => row.name === columnName);
+}
+
+function runMigrations() {
+  if (!tableHasColumn('users', 'branch')) {
+    db.exec('ALTER TABLE users ADD COLUMN branch TEXT');
+  }
+  if (!tableHasColumn('users', 'semester')) {
+    db.exec('ALTER TABLE users ADD COLUMN semester TEXT');
+  }
+  if (!tableHasColumn('users', 'registration_no')) {
+    db.exec('ALTER TABLE users ADD COLUMN registration_no TEXT');
+  }
+  if (!tableHasColumn('quizzes', 'target_branch')) {
+    db.exec('ALTER TABLE quizzes ADD COLUMN target_branch TEXT');
+  }
+  if (!tableHasColumn('quizzes', 'target_semester')) {
+    db.exec('ALTER TABLE quizzes ADD COLUMN target_semester TEXT');
+  }
+}
+
+runMigrations();
+
 const countUsers = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
 if (countUsers === 0) {
   seedDatabase();
 }
 
 function seedDatabase() {
-  const insertUser = db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
+  const insertUser = db.prepare(
+    'INSERT INTO users (name, email, password_hash, role, branch, semester, registration_no) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  );
   const insertQuiz = db.prepare(`
-    INSERT INTO quizzes (teacher_id, title, subject, instructions, timer_minutes, total_marks, status, is_preset, allow_multiple)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO quizzes (teacher_id, title, subject, instructions, timer_minutes, total_marks, status, is_preset, allow_multiple, target_branch, target_semester)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertQuestion = db.prepare(`
     INSERT INTO questions (quiz_id, question_type, explanation, question_text, option_a, option_b, option_c, option_d, correct_option, marks)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const teacher = insertUser.run('Demo Teacher', 'teacher@abhyaas.local', hashPassword('Teacher@123'), 'teacher');
-  insertUser.run('Demo Student', 'student@abhyaas.local', hashPassword('Student@123'), 'student');
+  const teacher = insertUser.run('Demo Teacher', 'teacher@abhyaas.local', hashPassword('Teacher@123'), 'teacher', null, null, null);
+  insertUser.run('Demo Student', 'student@abhyaas.local', hashPassword('Student@123'), 'student', 'CSE', '5', 'DEMO2025001');
 
   const teacherId = Number(teacher.lastInsertRowid);
 
   /* ── DSA Quiz (10 questions, 10 min, mixed types) ── */
-  const dsaQuiz = insertQuiz.run(teacherId, 'Data Structures & Algorithms', 'DSA', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0);
+  const dsaQuiz = insertQuiz.run(teacherId, 'Data Structures & Algorithms', 'DSA', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0, null, null);
   const dsaId = Number(dsaQuiz.lastInsertRowid);
   // MCQ
   insertQuestion.run(dsaId, 'mcq', 'Binary search divides the search interval in half each time.', 'What is the time complexity of binary search?', 'O(n)', 'O(log n)', 'O(n log n)', 'O(1)', 'B', 1);
@@ -178,7 +205,7 @@ function seedDatabase() {
   recalculateQuizMarks(dsaId);
 
   /* ── OS Quiz (10 questions, 10 min, mixed types) ── */
-  const osQuiz = insertQuiz.run(teacherId, 'Operating Systems', 'OS', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0);
+  const osQuiz = insertQuiz.run(teacherId, 'Operating Systems', 'OS', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0, null, null);
   const osId = Number(osQuiz.lastInsertRowid);
   // MCQ
   insertQuestion.run(osId, 'mcq', 'Priority scheduling can starve low-priority processes.', 'Which scheduling algorithm can cause starvation?', 'Round Robin', 'FCFS', 'Priority Scheduling', 'SJF', 'C', 1);
@@ -198,7 +225,7 @@ function seedDatabase() {
   recalculateQuizMarks(osId);
 
   /* ── DBMS Quiz (10 questions, 10 min, mixed types) ── */
-  const dbmsQuiz = insertQuiz.run(teacherId, 'Database Management Systems', 'DBMS', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0);
+  const dbmsQuiz = insertQuiz.run(teacherId, 'Database Management Systems', 'DBMS', 'Answer all questions. No negative marking. Good luck!', 10, 10, 'published', 0, 0, null, null);
   const dbmsId = Number(dbmsQuiz.lastInsertRowid);
   // MCQ
   insertQuestion.run(dbmsId, 'mcq', '2NF removes partial dependency from a relation.', 'Which normal form removes partial dependency?', '1NF', '2NF', '3NF', 'BCNF', 'B', 1);
@@ -236,7 +263,7 @@ export function getUserBySession(token) {
   if (!token) return null;
   cleanupExpiredSessions();
   return db.prepare(`
-    SELECT s.token, u.id, u.name, u.email, u.role
+    SELECT s.token, u.id, u.name, u.email, u.role, u.branch, u.semester, u.registration_no
     FROM sessions s
     JOIN users u ON u.id = s.user_id
     WHERE s.token = ?
@@ -254,9 +281,11 @@ export function cleanupExpiredSessions() {
 
 /* ── User Management ── */
 
-export function createUser({ name, email, passwordHash, role }) {
-  const stmt = db.prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
-  const result = stmt.run(name, email.toLowerCase(), passwordHash, role);
+export function createUser({ name, email, passwordHash, role, branch = null, semester = null, registrationNo = null }) {
+  const stmt = db.prepare(
+    'INSERT INTO users (name, email, password_hash, role, branch, semester, registration_no) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  );
+  const result = stmt.run(name, email.toLowerCase(), passwordHash, role, branch, semester, registrationNo);
   return getUserById(Number(result.lastInsertRowid));
 }
 
@@ -265,17 +294,39 @@ export function getUserByEmail(email) {
 }
 
 export function getUserById(id) {
-  return db.prepare('SELECT id, name, email, role, created_at FROM users WHERE id = ?').get(id) || null;
+  return db.prepare('SELECT id, name, email, role, branch, semester, registration_no, created_at FROM users WHERE id = ?').get(id) || null;
 }
 
 /* ── Quiz CRUD ── */
 
-export function createQuiz({ teacherId, title, subject, instructions, timerMinutes, status = 'draft', isPreset = 0, allowMultiple = 0 }) {
+export function createQuiz({
+  teacherId,
+  title,
+  subject,
+  instructions,
+  timerMinutes,
+  status = 'draft',
+  isPreset = 0,
+  allowMultiple = 0,
+  targetBranch = null,
+  targetSemester = null
+}) {
   const stmt = db.prepare(`
-    INSERT INTO quizzes (teacher_id, title, subject, instructions, timer_minutes, total_marks, status, is_preset, allow_multiple, updated_at)
-    VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, CURRENT_TIMESTAMP)
+    INSERT INTO quizzes (teacher_id, title, subject, instructions, timer_minutes, total_marks, status, is_preset, allow_multiple, target_branch, target_semester, updated_at)
+    VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
   `);
-  const result = stmt.run(teacherId || null, title, subject, instructions || '', timerMinutes, status, isPreset, allowMultiple);
+  const result = stmt.run(
+    teacherId || null,
+    title,
+    subject,
+    instructions || '',
+    timerMinutes,
+    status,
+    isPreset,
+    allowMultiple,
+    targetBranch,
+    targetSemester
+  );
   return getQuizById(Number(result.lastInsertRowid));
 }
 
@@ -289,13 +340,25 @@ export function updateQuiz(quizId, teacherId, payload) {
     instructions: payload.instructions ?? quiz.instructions,
     timer_minutes: payload.timerMinutes ?? quiz.timer_minutes,
     status: payload.status ?? quiz.status,
-    allow_multiple: payload.allowMultiple ?? quiz.allow_multiple
+    allow_multiple: payload.allowMultiple ?? quiz.allow_multiple,
+    target_branch: payload.targetBranch !== undefined ? payload.targetBranch : quiz.target_branch,
+    target_semester: payload.targetSemester !== undefined ? payload.targetSemester : quiz.target_semester
   };
   db.prepare(`
     UPDATE quizzes
-    SET title = ?, subject = ?, instructions = ?, timer_minutes = ?, status = ?, allow_multiple = ?, updated_at = CURRENT_TIMESTAMP
+    SET title = ?, subject = ?, instructions = ?, timer_minutes = ?, status = ?, allow_multiple = ?, target_branch = ?, target_semester = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
-  `).run(next.title, next.subject, next.instructions, next.timer_minutes, next.status, next.allow_multiple, quizId);
+  `).run(
+    next.title,
+    next.subject,
+    next.instructions,
+    next.timer_minutes,
+    next.status,
+    next.allow_multiple,
+    next.target_branch,
+    next.target_semester,
+    quizId
+  );
   recalculateQuizMarks(quizId);
   return getQuizById(quizId);
 }
@@ -314,6 +377,19 @@ export function getQuizById(id) {
     LEFT JOIN users u ON u.id = q.teacher_id
     WHERE q.id = ?
   `).get(id) || null;
+}
+
+export function studentCanAccessPublishedQuiz(student, quiz) {
+  if (!student || !quiz || quiz.status !== 'published') return false;
+  const sb = String(student.branch ?? '').trim();
+  const ss = String(student.semester ?? '').trim();
+  const tbRaw = quiz.target_branch;
+  const tsRaw = quiz.target_semester;
+  const tb = tbRaw == null ? '' : String(tbRaw).trim();
+  const ts = tsRaw == null ? '' : String(tsRaw).trim();
+  const branchOk = tb === '' || (sb !== '' && sb === tb);
+  const semesterOk = ts === '' || (ss !== '' && ss === ts);
+  return branchOk && semesterOk;
 }
 
 export function listTeacherQuizzes(teacherId) {
@@ -338,9 +414,18 @@ export function listStudentQuizzes(studentId) {
       (SELECT COUNT(*) FROM questions qs WHERE qs.quiz_id = q.id) AS question_count
     FROM quizzes q
     LEFT JOIN users u ON u.id = q.teacher_id
+    JOIN users me ON me.id = ?
     WHERE q.status = 'published'
+      AND (
+        q.target_branch IS NULL
+        OR (TRIM(COALESCE(me.branch, '')) != '' AND q.target_branch = TRIM(me.branch))
+      )
+      AND (
+        q.target_semester IS NULL
+        OR (TRIM(COALESCE(me.semester, '')) != '' AND q.target_semester = TRIM(me.semester))
+      )
     ORDER BY q.created_at DESC
-  `).all(studentId);
+  `).all(studentId, studentId);
   return quizzes.map((quiz) => ({
     ...quiz,
     can_attempt: quiz.allow_multiple || !quiz.already_attempted
@@ -425,6 +510,10 @@ export function startAttempt({ quizId, studentId, rollNumber, studentName }) {
   if (!quiz || quiz.status !== 'published') {
     throw new Error('Quiz is not available for attempt.');
   }
+  const student = getUserById(studentId);
+  if (!studentCanAccessPublishedQuiz(student, quiz)) {
+    throw new Error('This quiz is not assigned to your branch or semester.');
+  }
   if (!quiz.allow_multiple && getSubmittedAttempt(quizId, studentId)) {
     throw new Error('This quiz can be attempted only once.');
   }
@@ -465,7 +554,7 @@ export function startAttempt({ quizId, studentId, rollNumber, studentName }) {
 export function getAttemptById(attemptId) {
   return db.prepare(`
     SELECT a.*, q.title AS quiz_title, q.subject, q.instructions, q.timer_minutes, q.total_marks, q.allow_multiple,
-           u.name AS student_name
+           u.name AS student_name, u.branch AS student_branch, u.semester AS student_semester, u.registration_no AS student_registration_no
     FROM attempts a
     JOIN quizzes q ON q.id = a.quiz_id
     JOIN users u ON u.id = a.student_id
@@ -646,6 +735,9 @@ export function getResultForAttempt(attemptId, userId) {
       studentName: attempt.student_name,
       rollNumber: attempt.roll_number,
       studentActualName: attempt.student_actual_name,
+      studentBranch: attempt.student_branch ?? null,
+      studentSemester: attempt.student_semester ?? null,
+      studentRegistrationNo: attempt.student_registration_no ?? null,
       score: attempt.score,
       percentage: attempt.percentage,
       grade: attempt.grade,
@@ -682,7 +774,7 @@ export function getResultForAttempt(attemptId, userId) {
 
 export function getQuizLeaderboard(quizId) {
   const attempts = db.prepare(`
-    SELECT a.*, u.name AS student_name
+    SELECT a.*, u.name AS student_name, u.branch AS student_branch, u.semester AS student_semester, u.registration_no AS student_registration_no
     FROM attempts a
     JOIN users u ON u.id = a.student_id
     WHERE a.quiz_id = ? AND a.status = 'submitted'
@@ -694,7 +786,7 @@ export function getTeacherQuizAnalytics(quizId, teacherId) {
   const quiz = getQuizById(quizId);
   if (!quiz || quiz.teacher_id !== teacherId) return null;
   const attempts = db.prepare(`
-    SELECT a.*, u.name AS student_name, u.email AS student_email
+    SELECT a.*, u.name AS student_name, u.email AS student_email, u.branch AS student_branch, u.semester AS student_semester, u.registration_no AS student_registration_no
     FROM attempts a
     JOIN users u ON u.id = a.student_id
     WHERE a.quiz_id = ? AND a.status = 'submitted'
@@ -720,6 +812,9 @@ export function getTeacherQuizAnalytics(quizId, teacherId) {
       rollNumber: item.roll_number,
       studentActualName: item.student_actual_name,
       studentEmail: item.student_email,
+      studentBranch: item.student_branch,
+      studentSemester: item.student_semester,
+      studentRegistrationNo: item.student_registration_no,
       score: item.score,
       percentage: item.percentage,
       grade: item.grade,

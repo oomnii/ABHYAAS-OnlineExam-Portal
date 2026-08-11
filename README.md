@@ -1,6 +1,14 @@
 # ABHYAAS – Online Quiz & Examination Portal
 
-Abhyaas is a full-stack online examination platform where **teachers** create and publish exams, **students** attempt them live under timed and proctored conditions, and both sides receive detailed analytics dashboards.
+Abhyaas is a full-stack online examination portal where **teachers** create and publish exams (optionally targeted by branch/semester), **students** attempt them in a timed session with anti-cheat warnings, and both sides get results, review, and analytics.
+
+## Live demo
+
+**Open live app:** [https://abhyaas-online-exam-portal.onrender.com](https://abhyaas-online-exam-portal.onrender.com)
+
+> Render free tier may take about 30–60 seconds to wake after inactivity.
+
+**Repository:** [https://github.com/oomnii/ABHYAAS-OnlineExam-Portal](https://github.com/oomnii/ABHYAAS-OnlineExam-Portal)
 
 ## 🌐 Live Demo
 
@@ -10,99 +18,125 @@ Abhyaas is a full-stack online examination platform where **teachers** create an
 
 ---
 
-## ✨ Features
+## Features
 
-### Teacher Panel
-- **Create Quizzes** with title, subject, timer, instructions, and publish status (draft / published / closed)
-- **5 Question Types** — MCQ, True/False, Fill in the Blank, One-word Answer, Numerical
-- **Manage Questions** — Add, edit, delete questions per quiz with marks and correct answers
-- **Quiz Analytics** — Leaderboard view with ranked student attempts (score, %, grade, time taken, warnings)
-- **PDF Export** — Download quiz analytics as a printable report
+### Academic targeting
+- **Student profile** — branch, semester, and registration number required at student signup
+- **Quiz audience** — teachers can set target branch and/or semester, or leave as **All**
+- **Visibility rules** — students only see and start published quizzes that match their profile (or All)
+- Shared branch/semester lists in `public/js/constants.js` and `server/utils/academic.js`
 
-### Student Panel
-- **Browse Available Quizzes** — View published quizzes with subject, question count, and timer info
-- **Start Quiz** — Enter Name and Roll Number to begin a timed exam session
-- **Live Exam Shell** — Timer, question palette, answer per question (MCQ, text input, numerical)
-- **Anti-Cheating Protection** — Tab-switch warnings, fullscreen enforcement, copy/right-click disabled
-- **View Results** — Score, percentage, grade, rank, and detailed answer review with correct answers
-- **Subject-wise Performance** — Track average scores across subjects
-- **Study Notes** — Personal notes CRUD for revision
+Supported branches: CSE, IT, ECE, ME, CE, EE, AIML, Data Science, MCA, Other  
+Semesters: 1–8
+
+### Teacher panel
+- Create/update/delete quizzes (title, subject, timer, instructions, status: draft / published / closed)
+- Target branch and target semester selectors on the quiz form
+- Five question types: MCQ, True/False, Fill in the Blank, One-word, Numerical
+- Manage questions (add, edit, delete) with marks and correct answers
+- Dashboard stats and per-quiz analytics (leaderboard, averages, warnings)
+- Printable analytics report via browser print (`export.html` → Print to PDF)
+
+### Student panel
+- Role-first entry via `role-select.html`, then login or signup
+- Browse available quizzes filtered by branch/semester targeting
+- Start quiz with name and roll number; timed exam shell with question palette
+- Anti-cheat: tab-switch warnings, fullscreen exit warnings, copy/cut/paste/right-click blocked in the exam UI
+- Results: score, percentage, grade, rank, answer review
+- Subject-wise performance and personal study notes (CRUD)
 
 ### System
-- Role-based authentication (Teacher / Student)
-- Automatic question & option shuffling per attempt for fair exams
-- Single-session exam enforcement (no resume)
-- Seeded demo data: 3 preset quizzes (DBMS, OS, DSA) with 10 questions each
+- Role-based auth (teacher / student) with HttpOnly cookie sessions
+- Password hashing with Node.js `crypto.scryptSync` (salted; timing-safe verify)
+- Question and MCQ option shuffling per attempt; attempt paper snapshotted in `attempt_items`
+- Single-session attempts (no resume); one attempt per quiz unless `allow_multiple` is set via API
+- Light SQLite column migrations for academic fields on existing DBs
+- Seeded demo data when the database has no users: demo teacher, demo student (CSE / semester 5), and three published quizzes (DSA, OS, DBMS) with 10 questions each (targets = All)
 
 ---
 
-## 🛠 Tech Stack
+## Tech stack
 
-| Layer       | Technology                    |
-|-------------|-------------------------------|
-| **Backend** | Node.js (ES Modules)          |
-| **Database**| SQLite (via `node:sqlite`)     |
-| **Frontend**| Vanilla HTML / CSS / JavaScript|
-| **Design**  | Dark glassmorphic theme       |
-| **Auth**    | Cookie-based sessions (bcrypt)|
+| Layer | Technology |
+|-------|------------|
+| Backend | Node.js (ES Modules), native `node:http` |
+| Database | SQLite via Node built-in `node:sqlite` |
+| Frontend | Vanilla HTML / CSS / JavaScript (ES modules) |
+| Auth | Cookie session (`oqep_session`) + scrypt password hashes |
+| Dependencies | None (no npm runtime packages) |
 
 ---
 
-## 🚀 Quick Start
+## Quick start
 
 ### Prerequisites
-- **Node.js v22+** (uses experimental `node:sqlite`)
+- **Node.js v22+** (uses `node:sqlite`)
 
-### Install & Run
+### Install & run
 
 ```bash
-git clone https://github.com/<YOUR_REPO>/abhyaas-online-exam-portal.git
-cd abhyaas-online-exam-portal
-npm install
+git clone https://github.com/oomnii/ABHYAAS-OnlineExam-Portal.git
+cd ABHYAAS-OnlineExam-Portal
 npm start
 ```
 
-The server starts at **http://localhost:3000**
+For auto-restart during development:
 
-### Demo Credentials
+```bash
+npm run dev
+```
 
-| Role    | Email                    | Password      |
-|---------|--------------------------|---------------|
-| Teacher | `teacher@abhyaas.local`  | `Teacher@123` |
-| Student | `student@abhyaas.local`  | `Student@123` |
+Server listens on **http://localhost:3000** (or `PORT` if set).
+
+Optional environment variables:
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `PORT` | HTTP port | `3000` |
+| `OQEP_DB_PATH` | Full path to SQLite file | `server/db/data/oqep.sqlite` |
+
+### Demo credentials
+
+| Role | Email | Password | Notes |
+|------|-------|----------|-------|
+| Teacher | `teacher@abhyaas.local` | `Teacher@123` | No branch/semester |
+| Student | `student@abhyaas.local` | `Student@123` | Branch **CSE**, semester **5**, reg **DEMO2025001** |
 
 ---
 
-## 📂 Project Structure
+## Project structure
 
 ```
-├── public/                     # Frontend static files
-│   ├── assets/                 # Logo and icons
-│   ├── css/styles.css          # Global stylesheet (dark glassmorphic theme)
+├── public/
+│   ├── assets/logo.png
+│   ├── css/styles.css
 │   ├── js/
-│   │   ├── api.js              # Fetch wrapper for API calls
-│   │   ├── auth.js             # Login / Signup logic
-│   │   ├── common.js           # Shared utilities (escapeHtml, formatDuration, etc.)
-│   │   ├── quiz.js             # Live exam session + anti-cheat
-│   │   ├── result.js           # Result page rendering
-│   │   ├── student.js          # Student dashboard logic
-│   │   ├── teacher.js          # Teacher dashboard (Overview/Create/Manage/Analysis)
-│   │   └── export.js           # PDF export logic
-│   ├── index.html              # Landing page
+│   │   ├── api.js           # fetch wrapper (credentials: include)
+│   │   ├── auth.js          # login / signup + role query handling
+│   │   ├── common.js        # shared UI helpers
+│   │   ├── constants.js     # branch / semester dropdown lists
+│   │   ├── quiz.js          # live exam + anti-cheat
+│   │   ├── result.js
+│   │   ├── student.js
+│   │   ├── teacher.js
+│   │   └── export.js        # printable analytics (window.print)
+│   ├── index.html
+│   ├── role-select.html     # choose Student or Teacher
 │   ├── login.html / signup.html
 │   ├── student.html / teacher.html
-│   ├── quiz.html               # Live exam session page
-│   ├── result.html             # Result view page
-│   └── export.html             # PDF export view
+│   ├── quiz.html / result.html / export.html
 ├── server/
-│   ├── app.js                  # HTTP server & all API routes
+│   ├── app.js               # HTTP server + API routes
 │   ├── db/
-│   │   ├── database.js         # SQLite schema, seed data, all DB operations
-│   │   └── data/               # SQLite database file (auto-created at runtime)
+│   │   ├── database.js      # schema, migrations, seed, DB operations
+│   │   └── data/            # SQLite file (created at runtime; gitignored)
 │   └── utils/
-│       ├── http.js             # HTTP helpers (static file serving, JSON parsing)
-│       ├── password.js         # bcrypt hashing & verification
-│       └── quiz.js             # Question shuffling & grading logic
+│       ├── academic.js      # branch/semester validation helpers
+│       ├── http.js          # cookies, JSON, static files, status helpers
+│       ├── password.js      # scrypt hash / verify
+│       └── quiz.js          # shuffle, grading helpers, leaderboard sort
+├── scripts/
+│   └── e2e-smoke.ps1    # Local end-to-end API smoke tests (PowerShell)
 ├── package.json
 ├── .gitignore
 └── README.md
@@ -110,57 +144,65 @@ The server starts at **http://localhost:3000**
 
 ---
 
-## 📋 API Endpoints
+## API endpoints
 
-### Auth
-| Method | Endpoint             | Description              |
-|--------|----------------------|--------------------------|
-| POST   | `/api/auth/signup`   | Create account           |
-| POST   | `/api/auth/login`    | Login                    |
-| POST   | `/api/auth/logout`   | Logout                   |
-| GET    | `/api/auth/me`       | Get current user         |
+### System & auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/auth/me` | Current user (or `null`) |
+| POST | `/api/auth/signup` | Create account (students must send branch, semester, registrationNo) |
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/logout` | Logout |
 
 ### Teacher
-| Method | Endpoint                                  | Description             |
-|--------|-------------------------------------------|-------------------------|
-| GET    | `/api/teacher/dashboard`                  | Dashboard stats + quizzes|
-| POST   | `/api/quizzes`                            | Create quiz             |
-| PUT    | `/api/quizzes/:id`                        | Update quiz             |
-| DELETE | `/api/quizzes/:id`                        | Delete quiz + questions  |
-| GET    | `/api/quizzes/:id/questions`              | List questions           |
-| POST   | `/api/quizzes/:id/questions`              | Add question             |
-| PUT    | `/api/questions/:id`                      | Update question          |
-| DELETE | `/api/questions/:id`                      | Delete question          |
-| GET    | `/api/teacher/quizzes/:id/analytics`      | Quiz analytics           |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/teacher/dashboard` | Stats + quizzes |
+| GET | `/api/quizzes/teacher` | Teacher quiz list |
+| POST | `/api/quizzes` | Create quiz (supports `targetBranch`, `targetSemester`, `allowMultiple`) |
+| PUT | `/api/quizzes/:id` | Update quiz |
+| DELETE | `/api/quizzes/:id` | Delete quiz |
+| GET | `/api/quizzes/:id/questions` | List questions |
+| POST | `/api/quizzes/:id/questions` | Add question |
+| PUT | `/api/questions/:id` | Update question |
+| DELETE | `/api/questions/:id` | Delete question |
+| GET | `/api/teacher/quizzes/:id/analytics` | Quiz analytics |
 
-### Student
-| Method | Endpoint                           | Description              |
-|--------|------------------------------------|--------------------------|
-| GET    | `/api/student/dashboard`           | Dashboard + quizzes      |
-| GET    | `/api/quizzes/student`             | Available quizzes        |
-| POST   | `/api/attempts/start`              | Start new attempt        |
-| POST   | `/api/attempts/:id/answer`         | Save answer per question |
-| POST   | `/api/attempts/:id/warning`        | Record tab-switch warning|
-| POST   | `/api/attempts/:id/submit`         | Submit attempt           |
-| GET    | `/api/results/:id`                 | View result + review     |
-
----
-
-## 🔒 Anti-Cheating Features
-
-1. **Tab-switch detection** — Warning count increments when student switches tabs
-2. **Fullscreen enforcement** — Exam requests fullscreen; exiting counts as a warning
-3. **Copy/Paste disabled** — Text selection, copy, cut, paste, and right-click are blocked during exams
-4. **Single-session enforcement** — No resume; each quiz start creates a fresh attempt
+### Student & attempts
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/student/dashboard` | Stats, filtered quizzes, history, notes |
+| GET | `/api/quizzes/student` | Available published quizzes (branch/semester filtered) |
+| POST | `/api/student/notes` | Create note |
+| PUT | `/api/student/notes/:id` | Update note |
+| DELETE | `/api/student/notes/:id` | Delete note |
+| POST | `/api/attempts/start` | Start attempt |
+| POST | `/api/attempts/:id/answer` | Save answer |
+| POST | `/api/attempts/:id/warning` | Record warning |
+| POST | `/api/attempts/:id/submit` | Submit and grade |
+| GET | `/api/results/:id` | Result + review (+ embedded leaderboard) |
+| GET | `/api/leaderboard/:id` | Leaderboard for a quiz (API available; UI mainly uses embedded leaderboard in results/analytics) |
 
 ---
 
-## 👤 Author
+## Anti-cheating (implemented)
 
-**OM SETH** — [GitHub](https://github.com/)
+1. Tab hidden (`visibilitychange`) → warning API increment  
+2. Leaving fullscreen → warning + re-request fullscreen  
+3. Copy / cut / paste / context menu blocked while the exam is running  
+4. No resume of an in-progress attempt from a dedicated resume API  
+
+These are browser-side deterrents plus server-stored warning counts, not webcam/proctoring.
 
 ---
 
-## 📜 License
+## Author
+
+**OM SETH** — [GitHub](https://github.com/oomnii)
+
+---
+
+## License
 
 MIT
